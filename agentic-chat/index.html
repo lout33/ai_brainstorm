@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agentic Multi-Model Chat</title>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Main Chat (Left) -->
+      <div id="main-chat" class="main-chat">
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="chat-navigation">
+          <button id="prev-btn" class="nav-btn">&lt;</button>
+          <span id="conversation-indicator" class="conversation-indicator">No conversations</span>
+          <button id="next-btn" class="nav-btn">&gt;</button>
+        </div>
+        <div class="chat-input-container">
+          <input type="text" id="chat-input" class="chat-input" placeholder="Type your message..." />
+          <button id="send-btn" class="send-btn">Send</button>
+        </div>
+      </div>
+
+      <!-- Agent Panel (Right) -->
+      <div id="agent-panel" class="agent-panel">
+        <div class="agent-header">
+          <h2>Agent</h2>
+        </div>
+        
+        <!-- API Key Section -->
+        <div class="api-key-section">
+          <input type="password" id="api-key-input" class="api-key-input" placeholder="Enter OpenRouter API Key" />
+          <button id="save-api-key-btn" class="save-btn">Save</button>
+        </div>
+
+        <!-- Agent Model Selection -->
+        <div class="agent-model-section">
+          <h3>Agent Model</h3>
+          <select id="agent-model-select" class="agent-model-select">
+            <option value="x-ai/grok-4-fast">Grok 4 Fast</option>
+            <option value="openai/gpt-5.1">GPT-5.1</option>
+            <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
+            <option value="anthropic/claude-sonnet-4.5">Claude Sonnet 4.5</option>
+          </select>
+        </div>
+
+        <!-- Active Models Section -->
+        <div class="active-models-section">
+          <h3>Active Models</h3>
+          <div id="active-models-list" class="models-list"></div>
+          <div class="add-model-form">
+            <input type="text" id="model-id-input" class="model-input" placeholder="Model ID (e.g., openai/gpt-4o)" />
+            <input type="text" id="model-name-input" class="model-input" placeholder="Model Name" />
+            <button id="add-model-btn" class="add-btn">Add Model</button>
+          </div>
+        </div>
+
+        <!-- Agent Chat -->
+        <div class="agent-chat-section">
+          <h3>Agent Chat</h3>
+          <div id="agent-messages" class="agent-messages"></div>
+          <div class="agent-input-container">
+            <input type="text" id="agent-input" class="agent-input" placeholder="Ask agent..." />
+            <button id="agent-send-btn" class="agent-send-btn">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

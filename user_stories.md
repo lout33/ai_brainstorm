@@ -120,3 +120,28 @@ rememebr the main task of this is howe we manage the coversations history, we ha
 1. with the agent here the 'assistant' will be te agent, in the agent chat
 
 2. the actual x numbers of treatds where the 'user' message can be writed by the  the agent 
+
+
+---
+
+good now tell to each model to create a joke about doctors
+
+---
+
+now also add the agent model section where we pick wich models will be the agent 
+
+
+--
+
+also save each conversations history on the localstorage like this
+
+session1: 
+agent conversation : {...}
+conversation chat1: {...}
+conversation chat2: {...}
+
+
+session2: 
+////
+
+also ways to clean it, and a new way to create , i mean lets manage the sessions , lets put it on the left like a claiss history of sessions
