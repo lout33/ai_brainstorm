@@ -160,4 +160,6 @@ now lets improve the ui, like hide and show session is not working well , the co
 ---
 
 
-lets improve the ux/ui, like the input messge section, make it standsr like chatgpt.com or claude.com, i mean very smoth
+lets improve the ux/ui, like the input messge section, make it standsr like chatgpt.com or claude.com, i mean very smothh and polised, lets plan for a good ui, ux,
+give me good reference of ui/ux, so i can tell to prgramer to implement it
+lets try to copy and improve some good ui/ux

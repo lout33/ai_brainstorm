@@ -4,6 +4,14 @@
 const AGENT_MODEL_STORAGE_KEY = 'agentic_chat_agent_model';
 const DEFAULT_AGENT_MODEL = 'x-ai/grok-4-fast';
 
+// Available agent models
+export const AGENT_MODELS = [
+  { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
+  { id: 'x-ai/grok-4-fast', name: 'Grok 4 Fast' },
+  { id: 'openai/gpt-5-mini', name: 'GPT-5 Mini' },
+  { id: 'anthropic/claude-haiku-4.5', name: 'Claude Haiku 4.5' }
+];
+
 let currentAgentModel = null;
 
 // Load agent model from localStorage

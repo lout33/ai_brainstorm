@@ -1,6 +1,6 @@
 import './style.css';
 import { loadApiKey, saveApiKey, hasApiKey } from './api-key-manager.js';
-import { getActiveModels, addActiveModel, removeActiveModel } from './active-models.js';
+import { getActiveModels, addActiveModel, removeActiveModel, loadPreset } from './active-models.js';
 import { loadAgentModel, saveAgentModel } from './agent-model-manager.js';
 import {
   addAgentMessage,
@@ -62,6 +62,7 @@ const saveApiKeyBtn = document.getElementById('save-api-key-btn');
 
 const agentModelSelect = document.getElementById('agent-model-select');
 
+const presetSelect = document.getElementById('preset-select');
 const activeModelsList = document.getElementById('active-models-list');
 const modelIdInput = document.getElementById('model-id-input');
 const modelNameInput = document.getElementById('model-name-input');
@@ -110,6 +111,7 @@ function init() {
   newSessionBtn.addEventListener('click', handleNewSession);
   saveApiKeyBtn.addEventListener('click', handleSaveApiKey);
   agentModelSelect.addEventListener('change', handleAgentModelChange);
+  presetSelect.addEventListener('change', handlePresetChange);
   addModelBtn.addEventListener('click', handleAddModel);
   agentSendBtn.addEventListener('click', handleAgentSend);
   agentInput.addEventListener('keypress', (e) => {
@@ -235,6 +237,19 @@ function handleAgentModelChange() {
 }
 
 // Active Models Management
+function handlePresetChange() {
+  const presetName = presetSelect.value;
+  if (!presetName) return;
+  
+  const result = loadPreset(presetName);
+  if (result.success) {
+    renderActiveModels();
+    presetSelect.value = ''; // Reset dropdown
+  } else {
+    alert(result.message);
+  }
+}
+
 function renderActiveModels() {
   const models = getActiveModels();
   activeModelsList.innerHTML = '';

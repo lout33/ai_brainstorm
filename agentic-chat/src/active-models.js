@@ -3,6 +3,29 @@
 
 const STORAGE_KEY = 'agentic_chat_active_models';
 
+// Model presets
+export const MODEL_PRESETS = {
+  max: [
+    { id: 'openai/gpt-5.1', name: 'GPT-5.1' },
+    { id: 'anthropic/claude-sonnet-4.5', name: 'Claude Sonnet 4.5' },
+    { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro' }
+  ],
+  'fast-cheap': [
+    { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
+    { id: 'x-ai/grok-4-fast', name: 'Grok 4 Fast' },
+    { id: 'openai/gpt-5-mini', name: 'GPT-5 Mini' },
+    { id: 'anthropic/claude-haiku-4.5', name: 'Claude Haiku 4.5' }
+  ],
+  exp: [
+    { id: 'moonshotai/kimi-k2-thinking', name: 'Kimi K2 Thinking' },
+    { id: 'minimax/minimax-m2', name: 'Minimax M2' },
+    { id: 'qwen/qwen3-vl-235b-a22b-thinking', name: 'Qwen3 VL Thinking' },
+    { id: 'deepseek/deepseek-v3.2-exp', name: 'DeepSeek V3.2 Exp' },
+    { id: 'openai/gpt-oss-120b', name: 'GPT OSS 120B' },
+    { id: 'z-ai/glm-4.6', name: 'GLM 4.6' }
+  ]
+};
+
 // Default models to load on first run
 const DEFAULT_MODELS = [
   { id: 'openai/gpt-5.1', name: 'GPT-5.1', addedAt: Date.now() },
@@ -76,6 +99,28 @@ export function removeActiveModel(modelId) {
   saveActiveModels();
   
   return { success: true };
+}
+
+// Load a preset configuration
+export function loadPreset(presetName) {
+  const preset = MODEL_PRESETS[presetName];
+  if (!preset) {
+    return { success: false, message: 'Preset not found' };
+  }
+
+  // Replace active models with preset
+  activeModels = preset.map(model => ({
+    ...model,
+    addedAt: Date.now()
+  }));
+  
+  saveActiveModels();
+  return { success: true, models: activeModels };
+}
+
+// Get available presets
+export function getPresets() {
+  return Object.keys(MODEL_PRESETS);
 }
 
 // Initialize on module load
