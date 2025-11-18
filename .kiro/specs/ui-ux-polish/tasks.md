@@ -485,82 +485,246 @@ Ensure the interface is fully accessible.
 
 ---
 
-## Phase 4: Performance Optimization
+## Phase 4: Inline Branch Visualization
 
-### Task 13: Performance Improvements
+### Task 13: Implement Branch Indicator Component
+
+Create a visual branch indicator on the right side of the chat area showing conversation flow with dots and lines.
+
+- [ ] 13.1 Create branch indicator HTML structure
+  - Add fixed container on right side of chat area
+  - Create vertical line element for connection
+  - Add container for dots
+  - Ensure proper z-index layering
+  - _Requirements: 12.1, 12.8_
+
+- [ ] 13.2 Style branch indicator dots and lines
+  - Style vertical connecting line
+  - Style default dots (8px, subtle color)
+  - Style active/current dot (12px, brand color, glow)
+  - Style branch point indicators
+  - Add hover effects with scale transform
+  - _Requirements: 12.2, 12.3, 12.4, 12.5, 12.10_
+
+- [ ] 13.3 Implement dot positioning logic
+  - Calculate dot positions based on messages
+  - Map messages to dot data structure
+  - Identify branch points in conversation tree
+  - Update dot positions on conversation change
+  - Handle dynamic message additions
+  - _Requirements: 12.2, 12.4_
+
+- [ ] 13.4 Add click navigation functionality
+  - Implement click handler for dots
+  - Scroll to corresponding message smoothly
+  - Update active dot on navigation
+  - Add visual feedback on click
+  - _Requirements: 12.6_
+
+- [ ] 13.5 Implement scroll synchronization
+  - Track scroll position in chat area
+  - Calculate which message is in viewport center
+  - Update active dot based on scroll position
+  - Debounce scroll events for performance
+  - _Requirements: 12.5_
+
+- [ ] 13.6 Add tooltips to dots
+  - Create tooltip component
+  - Show message preview on hover
+  - Position tooltip to the left of dot
+  - Add smooth fade-in animation
+  - Truncate long previews with ellipsis
+  - _Requirements: 12.7_
+
+- [ ] 13.7 Implement branch point visualization
+  - Detect messages with multiple children
+  - Add branch indicator lines
+  - Style branch points distinctly
+  - Show branch connections visually
+  - _Requirements: 12.4_
+
+- [ ] 13.8 Add smooth transitions and animations
+  - Animate dot appearance/disappearance
+  - Animate active state changes
+  - Add smooth opacity transitions
+  - Animate branch indicator updates
+  - _Requirements: 12.9_
+
+- [ ] 13.9 Implement responsive behavior
+  - Hide branch indicator on mobile (<768px)
+  - Adjust positioning for different screen sizes
+  - Ensure doesn't overlap with other UI elements
+  - Test on various viewport sizes
+  - _Requirements: 12.11_
+
+- [ ] 13.10 Optimize branch indicator performance
+  - Use efficient DOM updates
+  - Implement virtual rendering for many dots
+  - Debounce scroll and resize events
+  - Use CSS transforms for animations
+  - _Requirements: 12.10_
+
+---
+
+## Phase 5: Settings Modal
+
+### Task 14: Implement Settings Modal
+
+Move all configuration UI from the agent panel into a centralized settings modal accessible via a gear icon.
+
+- [ ] 14.1 Create settings modal HTML structure
+  - Add gear icon button to top left area (near sidebar toggle)
+  - Create modal backdrop container
+  - Create modal dialog with header, content, and close button
+  - Structure sections for API key, agent model, and active models
+  - _Requirements: 13.1, 13.2, 13.6, 13.9_
+
+- [ ] 14.2 Style settings modal
+  - Apply backdrop overlay with semi-transparent background
+  - Style modal container with border, shadow, and border radius
+  - Style modal header with title and close button
+  - Apply consistent spacing and typography to modal content
+  - Style gear icon button with hover effects
+  - _Requirements: 13.8, 13.9_
+
+- [ ] 14.3 Implement modal animations
+  - Add fade-in animation for backdrop
+  - Add scale + fade animation for modal appearance
+  - Add fade-out animation for modal close
+  - Add rotation animation to gear icon on hover
+  - Ensure smooth transitions (200-300ms)
+  - _Requirements: 13.2, 13.7_
+
+- [ ] 14.4 Move API key section to modal
+  - Move API key input and save button to modal
+  - Maintain existing functionality
+  - Update event listeners to work in modal context
+  - Test API key save/load functionality
+  - _Requirements: 13.3_
+
+- [ ] 14.5 Move agent model selection to modal
+  - Move agent model dropdown to modal
+  - Maintain existing functionality
+  - Update event listeners to work in modal context
+  - Test agent model selection and persistence
+  - _Requirements: 13.4_
+
+- [ ] 14.6 Move active models section to modal
+  - Move preset selector to modal
+  - Move active models list to modal
+  - Move add model form to modal
+  - Maintain all existing functionality
+  - Update event listeners to work in modal context
+  - Test model add/remove and preset loading
+  - _Requirements: 13.5_
+
+- [ ] 14.7 Implement modal open/close functionality
+  - Add click handler for gear icon to open modal
+  - Add click handler for close button
+  - Add click handler for backdrop (click outside to close)
+  - Add Escape key handler to close modal
+  - Prevent body scroll when modal is open
+  - _Requirements: 13.2, 13.7_
+
+- [ ] 14.8 Make modal scrollable
+  - Add overflow-y: auto to modal content
+  - Style scrollbar for consistency
+  - Ensure modal doesn't exceed viewport height
+  - Test with various content heights
+  - _Requirements: 13.10_
+
+- [ ] 14.9 Remove agent panel from main layout
+  - Remove agent panel HTML from index.html
+  - Update CSS to remove agent panel layout
+  - Update responsive breakpoints (no more agent panel width)
+  - Test layout on all screen sizes
+  - _Requirements: 13.11_
+
+- [ ] 14.10 Update agent chat to remain accessible
+  - Keep agent chat section in the main interface (below or in sidebar)
+  - OR move agent chat to a separate toggle panel
+  - OR integrate agent chat into the main chat area
+  - Ensure agent chat functionality remains intact
+  - _Requirements: 13.11_
+
+---
+
+## Phase 6: Performance Optimization
+
+### Task 15: Performance Improvements
 
 Optimize the interface for smooth performance with large datasets.
 
-- [ ] 13.1 Implement virtual scrolling for messages
+- [ ] 15.1 Implement virtual scrolling for messages
   - Calculate visible message range
   - Render only visible messages + buffer
   - Update on scroll
   - Maintain scroll position
-  - _Requirements: 12.1, 12.2_
+  - _Requirements: 14.1, 14.2_
 
-- [ ] 13.2 Debounce input events
+- [ ] 15.2 Debounce input events
   - Debounce textarea input
   - Debounce search/filter inputs
   - Use appropriate delay (300ms)
   - Ensure responsive feel
-  - _Requirements: 12.3_
+  - _Requirements: 14.3_
 
-- [ ] 13.3 Optimize CSS animations
+- [ ] 15.3 Optimize CSS animations
   - Use transform instead of layout properties
   - Add will-change for animated elements
   - Remove will-change after animation
   - Use contain for isolated components
-  - _Requirements: 12.4, 12.5_
+  - _Requirements: 14.4, 14.5_
 
-- [ ] 13.4 Lazy load off-screen content
+- [ ] 15.4 Lazy load off-screen content
   - Lazy load messages outside viewport
   - Lazy load session list items
   - Use Intersection Observer
   - Ensure smooth loading
-  - _Requirements: 12.2_
+  - _Requirements: 14.2_
 
-- [ ] 13.5 Optimize localStorage usage
+- [ ] 15.5 Optimize localStorage usage
   - Compress session data before storing
   - Implement data cleanup for old sessions
   - Add pagination for session list
   - Handle quota exceeded errors
-  - _Requirements: 12.6, 12.7_
+  - _Requirements: 14.6, 14.7_
 
 ---
 
 ## Testing & Validation
 
-### Task 14: Cross-browser and Device Testing
+### Task 16: Cross-browser and Device Testing
 
-- [ ] 14.1 Test on desktop browsers
+- [ ] 16.1 Test on desktop browsers
   - Test on Chrome (latest)
   - Test on Firefox (latest)
   - Test on Safari (latest)
   - Test on Edge (latest)
   - Document and fix any issues
 
-- [ ] 14.2 Test on mobile devices
+- [ ] 16.2 Test on mobile devices
   - Test on iOS Safari
   - Test on Android Chrome
   - Test touch interactions
   - Test responsive breakpoints
   - Document and fix any issues
 
-- [ ] 14.3 Test accessibility
+- [ ] 16.3 Test accessibility
   - Test with keyboard navigation only
   - Test with NVDA screen reader
   - Test with JAWS screen reader
   - Test with VoiceOver
   - Document and fix any issues
 
-- [ ] 14.4 Test performance
+- [ ] 16.4 Test performance
   - Test with 100+ messages
   - Test with 50+ sessions
   - Test with slow network
   - Measure and optimize if needed
   - Document performance metrics
 
-- [ ] 14.5 Test edge cases
+- [ ] 16.5 Test edge cases
   - Test with very long messages
   - Test with rapid input
   - Test with network errors

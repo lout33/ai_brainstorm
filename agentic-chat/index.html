@@ -22,9 +22,15 @@
         <!-- Conversation Tree Navigation -->
         <div class="conversation-tree-container">
           <div class="tree-header">
-            <button id="toggle-sidebar-btn" class="toggle-sidebar-btn" title="Toggle Sessions">☰</button>
+            <div class="tree-header-left">
+              <button id="toggle-sidebar-btn" class="toggle-sidebar-btn" title="Toggle Sessions">☰</button>
+              <button id="settings-btn" class="settings-btn" title="Settings">⚙</button>
+            </div>
             <h3>Conversations</h3>
-            <span id="tree-indicator" class="tree-indicator">0 conversations</span>
+            <div class="tree-header-right">
+              <span id="tree-indicator" class="tree-indicator">0 conversations</span>
+              <button id="toggle-agent-panel-btn" class="toggle-agent-panel-btn" title="Toggle Agent Chat">💬</button>
+            </div>
           </div>
           <div id="conversation-tree" class="conversation-tree-scroll"></div>
         </div>
@@ -47,51 +53,13 @@
         </div>
       </div>
 
-      <!-- Agent Panel (Right) -->
+      <!-- Agent Chat Panel (Right) -->
       <div id="agent-panel" class="agent-panel">
         <div class="agent-header">
-          <h2>Agent</h2>
+          <h2>Agent Chat</h2>
         </div>
         
-        <!-- API Key Section -->
-        <div class="api-key-section">
-          <input type="password" id="api-key-input" class="api-key-input" placeholder="Enter OpenRouter API Key" />
-          <button id="save-api-key-btn" class="save-btn">Save</button>
-        </div>
-
-        <!-- Agent Model Selection -->
-        <div class="agent-model-section">
-          <h3>Agent Model</h3>
-          <select id="agent-model-select" class="agent-model-select">
-            <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
-            <option value="x-ai/grok-4-fast">Grok 4 Fast</option>
-            <option value="openai/gpt-5-mini">GPT-5 Mini</option>
-            <option value="anthropic/claude-haiku-4.5">Claude Haiku 4.5</option>
-          </select>
-        </div>
-
-        <!-- Active Models Section -->
-        <div class="active-models-section">
-          <div class="models-header">
-            <h3>Active Models</h3>
-            <select id="preset-select" class="preset-select">
-              <option value="">Load Preset...</option>
-              <option value="max">Max (Premium)</option>
-              <option value="fast-cheap">Fast & Cheap</option>
-              <option value="exp">Experimental</option>
-            </select>
-          </div>
-          <div id="active-models-list" class="models-list"></div>
-          <div class="add-model-form">
-            <input type="text" id="model-id-input" class="model-input" placeholder="Model ID (e.g., openai/gpt-4o)" />
-            <input type="text" id="model-name-input" class="model-input" placeholder="Model Name" />
-            <button id="add-model-btn" class="add-btn">Add Model</button>
-          </div>
-        </div>
-
-        <!-- Agent Chat -->
         <div class="agent-chat-section">
-          <h3>Agent Chat</h3>
           <div id="agent-messages" class="agent-messages"></div>
           <div class="agent-input-container">
             <input type="text" id="agent-input" class="agent-input" placeholder="Ask agent..." />
@@ -100,6 +68,57 @@
         </div>
       </div>
     </div>
+
+    <!-- Settings Modal (hidden by default) -->
+    <div id="settings-modal-backdrop" class="modal-backdrop" style="display: none;">
+      <div class="settings-modal">
+        <div class="modal-header">
+          <h2>Settings</h2>
+          <button id="modal-close-btn" class="modal-close-btn" title="Close">✕</button>
+        </div>
+        <div class="modal-content">
+          <!-- API Key Section -->
+          <div class="modal-section">
+            <h3>API Key</h3>
+            <div class="modal-input-group">
+              <input type="password" id="modal-api-key-input" class="modal-input" placeholder="Enter OpenRouter API Key" />
+              <button id="modal-save-api-key-btn" class="modal-btn modal-btn-success">Save</button>
+            </div>
+          </div>
+
+          <!-- Agent Model Section -->
+          <div class="modal-section">
+            <h3>Agent Model</h3>
+            <select id="modal-agent-model-select" class="modal-select">
+              <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
+              <option value="x-ai/grok-4-fast">Grok 4 Fast</option>
+              <option value="openai/gpt-5-mini">GPT-5 Mini</option>
+              <option value="anthropic/claude-haiku-4.5">Claude Haiku 4.5</option>
+            </select>
+          </div>
+
+          <!-- Active Models Section -->
+          <div class="modal-section">
+            <div class="modal-section-header">
+              <h3>Active Models</h3>
+              <select id="modal-preset-select" class="modal-select-inline">
+                <option value="">Load Preset...</option>
+                <option value="max">Max (Premium)</option>
+                <option value="fast-cheap">Fast & Cheap</option>
+                <option value="exp">Experimental</option>
+              </select>
+            </div>
+            <div id="modal-active-models-list" class="modal-models-list"></div>
+            <div class="modal-add-model-form">
+              <input type="text" id="modal-model-id-input" class="modal-input" placeholder="Model ID (e.g., openai/gpt-4o)" />
+              <input type="text" id="modal-model-name-input" class="modal-input" placeholder="Model Name" />
+              <button id="modal-add-model-btn" class="modal-btn modal-btn-primary">Add Model</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

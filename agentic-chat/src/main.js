@@ -42,10 +42,18 @@ import {
   onStateChange as onSessionStateChange
 } from './session-manager.js';
 import { renderSessionList, showDeleteConfirmation } from './session-history-ui.js';
+import {
+  initBranchIndicator,
+  updateBranchIndicator,
+  setupScrollSync,
+  updateActiveDot
+} from './branch-indicator.js';
 
 // DOM Elements
 const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
+const toggleAgentPanelBtn = document.getElementById('toggle-agent-panel-btn');
 const sessionHistory = document.getElementById('session-history');
+const agentPanel = document.getElementById('agent-panel');
 const newSessionBtn = document.getElementById('new-session-btn');
 
 const chatMessages = document.getElementById('chat-messages');
@@ -57,20 +65,149 @@ const conversationIndicator = document.getElementById('conversation-indicator');
 const conversationTreeContainer = document.getElementById('conversation-tree');
 const treeIndicator = document.getElementById('tree-indicator');
 
-const apiKeyInput = document.getElementById('api-key-input');
-const saveApiKeyBtn = document.getElementById('save-api-key-btn');
-
-const agentModelSelect = document.getElementById('agent-model-select');
-
-const presetSelect = document.getElementById('preset-select');
-const activeModelsList = document.getElementById('active-models-list');
-const modelIdInput = document.getElementById('model-id-input');
-const modelNameInput = document.getElementById('model-name-input');
-const addModelBtn = document.getElementById('add-model-btn');
+// Settings Modal Elements
+const settingsBtn = document.getElementById('settings-btn');
+const modalBackdrop = document.getElementById('settings-modal-backdrop');
+const modalCloseBtn = document.getElementById('modal-close-btn');
+const modalApiKeyInput = document.getElementById('modal-api-key-input');
+const modalSaveApiKeyBtn = document.getElementById('modal-save-api-key-btn');
+const modalAgentModelSelect = document.getElementById('modal-agent-model-select');
+const modalPresetSelect = document.getElementById('modal-preset-select');
+const modalActiveModelsList = document.getElementById('modal-active-models-list');
+const modalModelIdInput = document.getElementById('modal-model-id-input');
+const modalModelNameInput = document.getElementById('modal-model-name-input');
+const modalAddModelBtn = document.getElementById('modal-add-model-btn');
 
 const agentMessages = document.getElementById('agent-messages');
 const agentInput = document.getElementById('agent-input');
 const agentSendBtn = document.getElementById('agent-send-btn');
+
+// Settings Modal Functions
+function openSettingsModal() {
+  modalBackdrop.style.display = 'flex';
+  document.body.classList.add('modal-open');
+  
+  // Load current values
+  const apiKey = loadApiKey();
+  if (apiKey) {
+    modalApiKeyInput.value = apiKey;
+  }
+  
+  const agentModel = loadAgentModel();
+  modalAgentModelSelect.value = agentModel;
+  
+  renderModalActiveModels();
+}
+
+function closeSettingsModal() {
+  modalBackdrop.classList.add('closing');
+  setTimeout(() => {
+    modalBackdrop.style.display = 'none';
+    modalBackdrop.classList.remove('closing');
+    document.body.classList.remove('modal-open');
+  }, 200); // Match animation duration
+}
+
+function handleEscapeKey(e) {
+  if (e.key === 'Escape' && modalBackdrop.style.display === 'flex') {
+    closeSettingsModal();
+  }
+}
+
+// Add escape key listener
+document.addEventListener('keydown', handleEscapeKey);
+
+// Modal API Key Management
+function handleModalSaveApiKey() {
+  const apiKey = modalApiKeyInput.value.trim();
+  if (!apiKey) {
+    alert('Please enter an API key');
+    return;
+  }
+
+  if (saveApiKey(apiKey)) {
+    alert('API key saved!');
+  } else {
+    alert('Failed to save API key');
+  }
+}
+
+// Modal Agent Model Management
+function handleModalAgentModelChange() {
+  const selectedModel = modalAgentModelSelect.value;
+  if (saveAgentModel(selectedModel)) {
+    console.log('Agent model changed to:', selectedModel);
+  } else {
+    alert('Failed to save agent model');
+  }
+}
+
+// Modal Active Models Management
+function handleModalPresetChange() {
+  const presetName = modalPresetSelect.value;
+  if (!presetName) return;
+  
+  const result = loadPreset(presetName);
+  if (result.success) {
+    renderModalActiveModels();
+    modalPresetSelect.value = ''; // Reset dropdown
+  } else {
+    alert(result.message);
+  }
+}
+
+function renderModalActiveModels() {
+  const models = getActiveModels();
+  modalActiveModelsList.innerHTML = '';
+
+  if (models.length === 0) {
+    modalActiveModelsList.innerHTML = '<div style="font-size: 14px; color: var(--text-tertiary); padding: var(--space-4); text-align: center;">No active models</div>';
+    return;
+  }
+
+  models.forEach(model => {
+    const modelItem = document.createElement('div');
+    modelItem.className = 'modal-model-item';
+    modelItem.innerHTML = `
+      <div class="modal-model-info">
+        <div class="modal-model-name">${model.name}</div>
+        <div class="modal-model-id">${model.id}</div>
+      </div>
+      <button class="modal-remove-btn" data-model-id="${model.id}">Remove</button>
+    `;
+
+    const removeBtn = modelItem.querySelector('.modal-remove-btn');
+    removeBtn.addEventListener('click', () => handleModalRemoveModel(model.id));
+
+    modalActiveModelsList.appendChild(modelItem);
+  });
+}
+
+function handleModalAddModel() {
+  const modelId = modalModelIdInput.value.trim();
+  const modelName = modalModelNameInput.value.trim();
+
+  if (!modelId || !modelName) {
+    alert('Please enter both model ID and name');
+    return;
+  }
+
+  const result = addActiveModel(modelId, modelName);
+  if (result.success) {
+    modalModelIdInput.value = '';
+    modalModelNameInput.value = '';
+    renderModalActiveModels();
+  } else {
+    alert(result.message);
+  }
+}
+
+function handleModalRemoveModel(modelId) {
+  if (confirm('Remove this model?')) {
+    removeActiveModel(modelId);
+    renderModalActiveModels();
+  }
+}
 
 // Initialize
 function init() {
@@ -84,35 +221,52 @@ function init() {
     setState(session);
   }
   
-  // Load API key
+  // Load API key into modal
   const apiKey = loadApiKey();
   if (apiKey) {
-    apiKeyInput.value = apiKey;
+    modalApiKeyInput.value = apiKey;
   }
 
-  // Load agent model
+  // Load agent model into modal
   const agentModel = loadAgentModel();
-  agentModelSelect.value = agentModel;
+  modalAgentModelSelect.value = agentModel;
+
+  // Initialize branch indicator
+  const mainChat = document.querySelector('.main-chat');
+  initBranchIndicator(mainChat);
+  setupScrollSync(chatMessages);
 
   // Render UI
-  renderActiveModels();
+  renderModalActiveModels();
   renderSessionHistory();
   renderAgentMessages();
   renderCurrentConversation();
   renderTree();
   updateConversationIndicator();
+  updateBranchIndicatorFromConversation();
   
-  // Set initial toggle button state
-  toggleSidebarBtn.textContent = '✕';
+  // Set initial toggle button states
+  toggleSidebarBtn.textContent = '◀';
   toggleSidebarBtn.title = 'Hide Sessions';
+  toggleAgentPanelBtn.textContent = '▶';
+  toggleAgentPanelBtn.title = 'Hide Agent Chat';
 
   // Setup event listeners
   toggleSidebarBtn.addEventListener('click', handleToggleSidebar);
+  toggleAgentPanelBtn.addEventListener('click', handleToggleAgentPanel);
   newSessionBtn.addEventListener('click', handleNewSession);
-  saveApiKeyBtn.addEventListener('click', handleSaveApiKey);
-  agentModelSelect.addEventListener('change', handleAgentModelChange);
-  presetSelect.addEventListener('change', handlePresetChange);
-  addModelBtn.addEventListener('click', handleAddModel);
+  
+  // Settings modal listeners
+  settingsBtn.addEventListener('click', openSettingsModal);
+  modalCloseBtn.addEventListener('click', closeSettingsModal);
+  modalBackdrop.addEventListener('click', (e) => {
+    if (e.target === modalBackdrop) closeSettingsModal();
+  });
+  modalSaveApiKeyBtn.addEventListener('click', handleModalSaveApiKey);
+  modalAgentModelSelect.addEventListener('change', handleModalAgentModelChange);
+  modalPresetSelect.addEventListener('change', handleModalPresetChange);
+  modalAddModelBtn.addEventListener('click', handleModalAddModel);
+  
   agentSendBtn.addEventListener('click', handleAgentSend);
   agentInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleAgentSend();
@@ -147,11 +301,27 @@ function handleToggleSidebar() {
 
 function updateToggleButton() {
   if (sessionHistory.classList.contains('collapsed')) {
-    toggleSidebarBtn.textContent = '☰';
+    toggleSidebarBtn.textContent = '▶';
     toggleSidebarBtn.title = 'Show Sessions';
   } else {
-    toggleSidebarBtn.textContent = '✕';
+    toggleSidebarBtn.textContent = '◀';
     toggleSidebarBtn.title = 'Hide Sessions';
+  }
+}
+
+// Agent Panel Toggle
+function handleToggleAgentPanel() {
+  agentPanel.classList.toggle('collapsed');
+  updateAgentPanelToggleButton();
+}
+
+function updateAgentPanelToggleButton() {
+  if (agentPanel.classList.contains('collapsed')) {
+    toggleAgentPanelBtn.textContent = '◀';
+    toggleAgentPanelBtn.title = 'Show Agent Chat';
+  } else {
+    toggleAgentPanelBtn.textContent = '▶';
+    toggleAgentPanelBtn.title = 'Hide Agent Chat';
   }
 }
 
@@ -223,97 +393,7 @@ function handleDeleteSession(sessionId) {
   }
 }
 
-// API Key Management
-function handleSaveApiKey() {
-  const apiKey = apiKeyInput.value.trim();
-  if (!apiKey) {
-    alert('Please enter an API key');
-    return;
-  }
 
-  if (saveApiKey(apiKey)) {
-    alert('API key saved!');
-  } else {
-    alert('Failed to save API key');
-  }
-}
-
-// Agent Model Management
-function handleAgentModelChange() {
-  const selectedModel = agentModelSelect.value;
-  if (saveAgentModel(selectedModel)) {
-    console.log('Agent model changed to:', selectedModel);
-  } else {
-    alert('Failed to save agent model');
-  }
-}
-
-// Active Models Management
-function handlePresetChange() {
-  const presetName = presetSelect.value;
-  if (!presetName) return;
-  
-  const result = loadPreset(presetName);
-  if (result.success) {
-    renderActiveModels();
-    presetSelect.value = ''; // Reset dropdown
-  } else {
-    alert(result.message);
-  }
-}
-
-function renderActiveModels() {
-  const models = getActiveModels();
-  activeModelsList.innerHTML = '';
-
-  if (models.length === 0) {
-    activeModelsList.innerHTML = '<div style="font-size: 12px; color: #666;">No active models</div>';
-    return;
-  }
-
-  models.forEach(model => {
-    const modelItem = document.createElement('div');
-    modelItem.className = 'model-item';
-    modelItem.innerHTML = `
-      <div>
-        <div class="model-name">${model.name}</div>
-        <div class="model-id">${model.id}</div>
-      </div>
-      <button class="remove-btn" data-model-id="${model.id}">Remove</button>
-    `;
-
-    const removeBtn = modelItem.querySelector('.remove-btn');
-    removeBtn.addEventListener('click', () => handleRemoveModel(model.id));
-
-    activeModelsList.appendChild(modelItem);
-  });
-}
-
-function handleAddModel() {
-  const modelId = modelIdInput.value.trim();
-  const modelName = modelNameInput.value.trim();
-
-  if (!modelId || !modelName) {
-    alert('Please enter both model ID and name');
-    return;
-  }
-
-  const result = addActiveModel(modelId, modelName);
-  if (result.success) {
-    modelIdInput.value = '';
-    modelNameInput.value = '';
-    renderActiveModels();
-  } else {
-    alert(result.message);
-  }
-}
-
-function handleRemoveModel(modelId) {
-  if (confirm('Remove this model?')) {
-    removeActiveModel(modelId);
-    renderActiveModels();
-  }
-}
 
 // Agent Chat
 function renderAgentMessages() {
@@ -422,6 +502,29 @@ async function handleContinueConversations(command) {
   }
 }
 
+// Helper function to update branch indicator
+function updateBranchIndicatorFromConversation() {
+  const conversation = getCurrentConversation();
+  
+  if (!conversation || !conversation.history) {
+    updateBranchIndicator([], null);
+    return;
+  }
+  
+  // Map conversation history to message objects with IDs
+  const messages = conversation.history.map((msg, index) => ({
+    id: `msg-${index}`,
+    content: msg.content,
+    role: msg.role,
+    isBranchPoint: false // TODO: Detect actual branch points
+  }));
+  
+  // Set the last message as active
+  const activeMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
+  
+  updateBranchIndicator(messages, activeMessageId);
+}
+
 // Main Chat
 function renderCurrentConversation() {
   const conversation = getCurrentConversation();
@@ -429,12 +532,15 @@ function renderCurrentConversation() {
 
   if (!conversation) {
     chatMessages.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-tertiary);">No active conversation. Ask the agent to create some!</div>';
+    updateBranchIndicator([], null);
     return;
   }
 
-  conversation.history.forEach(msg => {
+  conversation.history.forEach((msg, index) => {
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${msg.role}`;
+    msgDiv.dataset.messageId = `msg-${index}`;
+    msgDiv.dataset.messageIndex = index;
 
     const bubble = document.createElement('div');
     bubble.className = 'message-bubble';
@@ -470,6 +576,9 @@ function renderCurrentConversation() {
   }
 
   chatMessages.scrollTop = chatMessages.scrollHeight;
+  
+  // Update branch indicator
+  updateBranchIndicatorFromConversation();
 }
 
 async function handleSendMessage() {
@@ -554,6 +663,7 @@ function handlePrevConversation() {
   renderCurrentConversation();
   renderTree();
   updateConversationIndicator();
+  updateBranchIndicatorFromConversation();
 }
 
 function handleNextConversation() {
@@ -561,6 +671,7 @@ function handleNextConversation() {
   renderCurrentConversation();
   renderTree();
   updateConversationIndicator();
+  updateBranchIndicatorFromConversation();
 }
 
 function updateConversationIndicator() {
@@ -646,6 +757,7 @@ function handleTreeSelect(conversationId) {
     renderCurrentConversation();
     renderTree();
     updateConversationIndicator();
+    updateBranchIndicatorFromConversation();
   }
 }
 

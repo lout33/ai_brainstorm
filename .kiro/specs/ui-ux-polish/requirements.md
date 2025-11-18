@@ -177,7 +177,43 @@ This document defines the requirements for a comprehensive UI/UX improvement to 
 6. THE Conversation Tree SHALL support drag-and-drop to reorganize conversations (future enhancement)
 7. THE Conversation Tree SHALL use icons to indicate conversation type (root, branch, active)
 
-### Requirement 12: Performance Optimization
+### Requirement 12: Inline Branch Visualization
+
+**User Story:** As a user navigating conversation branches, I want a visual indicator on the side of the chat showing dots connected by lines representing the conversation flow, so that I can quickly see where I am in the conversation tree and jump between branches.
+
+#### Acceptance Criteria
+
+1. THE Chat Interface SHALL display a vertical branch indicator on the right side of the main chat area
+2. THE Branch Indicator SHALL show dots representing each message or conversation point in the current branch
+3. THE Branch Indicator SHALL connect dots with vertical lines to show conversation flow
+4. WHEN a conversation has multiple branches, THE Branch Indicator SHALL show branch points with connecting lines
+5. THE Branch Indicator SHALL highlight the current message position with a distinct color or size
+6. WHEN the user clicks on a dot, THE System SHALL scroll to the corresponding message smoothly
+7. THE Branch Indicator SHALL show tooltips on hover displaying message preview or metadata
+8. THE Branch Indicator SHALL remain fixed in position while scrolling through the conversation
+9. WHEN switching between conversation branches, THE Branch Indicator SHALL update smoothly with animation
+10. THE Branch Indicator SHALL use subtle colors and sizing to avoid distracting from the main content
+11. THE Branch Indicator SHALL hide automatically on mobile devices or narrow viewports
+
+### Requirement 13: Settings Modal for Configuration
+
+**User Story:** As a user managing API keys and model configurations, I want all settings accessible through a modal dialog opened from a gear icon, so that the interface is cleaner and configuration is centralized.
+
+#### Acceptance Criteria
+
+1. THE Chat Interface SHALL display a gear icon button in the top left corner of the interface
+2. WHEN the user clicks the gear icon, THE System SHALL open a modal dialog with smooth fade-in and scale animation
+3. THE Settings Modal SHALL display API key configuration with password input and save button
+4. THE Settings Modal SHALL display agent model selection dropdown
+5. THE Settings Modal SHALL display active models section with preset loader and add/remove functionality
+6. THE Settings Modal SHALL include a close button (X) in the top right corner
+7. WHEN the user clicks outside the modal or presses Escape key, THE System SHALL close the modal with smooth fade-out animation
+8. THE Settings Modal SHALL use the same design system colors, spacing, and typography as the rest of the interface
+9. THE Settings Modal SHALL be centered on screen with backdrop overlay
+10. THE Settings Modal SHALL be scrollable if content exceeds viewport height
+11. THE System SHALL remove the agent panel from the main interface layout after moving settings to modal
+
+### Requirement 14: Performance Optimization
 
 **User Story:** As a user with many conversations and messages, I want the interface to remain fast and responsive, so that the application doesn't slow down over time.
 

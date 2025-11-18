@@ -856,13 +856,437 @@ const handleInput = debounce((value) => {
 }, 300);
 ```
 
+### 6. Inline Branch Visualization
+
+**Design Pattern**: Vertical dot indicator inspired by AI Studio's branch view
+
+**Visual Design**:
+```
+Main Chat Area                    Branch Indicator
+┌─────────────────────────────┐  │
+│ Message 1                   │  ●  ← Current
+│                             │  │
+├─────────────────────────────┤  │
+│ Message 2                   │  ●
+│                             │  │
+├─────────────────────────────┤  ├─ Branch point
+│ Message 3 (Branch A)        │  ●
+│                             │  │
+├─────────────────────────────┤  ●
+│ Message 4                   │  │
+└─────────────────────────────┘  │
+```
+
+**Key Features**:
+- Fixed position on right side of chat area (20px from edge)
+- Dots represent messages or conversation points
+- Vertical line connects dots (1px solid, subtle color)
+- Current message dot is larger (12px) and highlighted
+- Other dots are smaller (8px) with reduced opacity
+- Branch points show connecting lines to indicate splits
+- Smooth scroll animation when clicking dots
+- Tooltip shows message preview on hover
+- Fades out when not hovering over chat area
+- Hidden on mobile (<768px)
+
+**CSS Implementation**:
+```css
+.branch-indicator {
+  position: fixed;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  z-index: 10;
+  opacity: 0.6;
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+.branch-indicator:hover {
+  opacity: 1;
+}
+
+.branch-line {
+  position: absolute;
+  width: 1px;
+  height: 100%;
+  background: var(--border-default);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: -1;
+}
+
+.branch-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--text-tertiary);
+  border: 2px solid var(--bg-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  position: relative;
+}
+
+.branch-dot:hover {
+  transform: scale(1.3);
+  background: var(--brand-primary);
+}
+
+.branch-dot.active {
+  width: 12px;
+  height: 12px;
+  background: var(--brand-primary);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.branch-dot.branch-point::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 1px;
+  background: var(--border-default);
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.branch-tooltip {
+  position: absolute;
+  right: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-normal) var(--ease-out);
+  box-shadow: var(--shadow-md);
+}
+
+.branch-dot:hover .branch-tooltip {
+  opacity: 1;
+}
+
+/* Hide on mobile */
+@media (max-width: 768px) {
+  .branch-indicator {
+    display: none;
+  }
+}
+```
+
+**JavaScript Behavior**:
+```javascript
+// Calculate dot positions based on messages
+function updateBranchIndicator(messages, currentMessageId) {
+  const dots = messages.map((msg, index) => ({
+    id: msg.id,
+    position: index,
+    isCurrent: msg.id === currentMessageId,
+    isBranchPoint: msg.children && msg.children.length > 1,
+    preview: msg.content.substring(0, 50) + '...'
+  }));
+  
+  renderBranchDots(dots);
+}
+
+// Smooth scroll to message on dot click
+function handleDotClick(messageId) {
+  const messageElement = document.getElementById(`message-${messageId}`);
+  messageElement.scrollIntoView({ 
+    behavior: 'smooth', 
+    block: 'center' 
+  });
+}
+
+// Update active dot on scroll
+function updateActiveDot() {
+  const messages = document.querySelectorAll('.message');
+  const viewportCenter = window.innerHeight / 2;
+  
+  let closestMessage = null;
+  let closestDistance = Infinity;
+  
+  messages.forEach(msg => {
+    const rect = msg.getBoundingClientRect();
+    const distance = Math.abs(rect.top + rect.height / 2 - viewportCenter);
+    
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestMessage = msg;
+    }
+  });
+  
+  if (closestMessage) {
+    updateActiveDotById(closestMessage.dataset.messageId);
+  }
+}
+```
+
+### 7. Settings Modal
+
+**Design Pattern**: Centered modal dialog with backdrop overlay
+
+**Visual Design**:
+```
+┌─────────────────────────────────────────────────────────┐
+│                    [Backdrop Overlay]                   │
+│                                                         │
+│     ┌─────────────────────────────────────────┐       │
+│     │  Settings                            ✕  │       │
+│     ├─────────────────────────────────────────┤       │
+│     │                                         │       │
+│     │  API Key                                │       │
+│     │  ┌───────────────────────┐  [Save]     │       │
+│     │  │ ••••••••••••••••••••  │             │       │
+│     │  └───────────────────────┘             │       │
+│     │                                         │       │
+│     │  Agent Model                            │       │
+│     │  ┌───────────────────────────────────┐ │       │
+│     │  │ Gemini 2.5 Flash              ▼  │ │       │
+│     │  └───────────────────────────────────┘ │       │
+│     │                                         │       │
+│     │  Active Models    [Load Preset... ▼]   │       │
+│     │  ┌───────────────────────────────────┐ │       │
+│     │  │ Gemini 2.5 Flash      [Remove]   │ │       │
+│     │  │ google/gemini-2.5-flash          │ │       │
+│     │  └───────────────────────────────────┘ │       │
+│     │                                         │       │
+│     │  ┌─────────────┐  ┌──────────────┐    │       │
+│     │  │ Model ID    │  │ Model Name   │    │       │
+│     │  └─────────────┘  └──────────────┘    │       │
+│     │  [Add Model]                           │       │
+│     │                                         │       │
+│     └─────────────────────────────────────────┘       │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Key Features**:
+- Gear icon button in top left (next to sidebar toggle)
+- Modal centered on screen with max-width 600px
+- Backdrop overlay with semi-transparent black (0.5 opacity)
+- Modal slides in with scale animation (0.95 to 1.0)
+- Close button (X) in top right of modal
+- Click outside or Escape key to close
+- Smooth fade-out animation on close
+- Scrollable content if exceeds viewport height
+- All settings from agent panel moved here
+
+**CSS Implementation**:
+```css
+.settings-btn {
+  width: 36px;
+  height: 36px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.settings-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--brand-primary);
+  transform: rotate(45deg);
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  animation: fadeIn var(--duration-normal) var(--ease-out) forwards;
+}
+
+.modal-backdrop.closing {
+  animation: fadeOut var(--duration-normal) var(--ease-out) forwards;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  to { opacity: 0; }
+}
+
+.settings-modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: scale(0.95);
+  animation: modalSlideIn var(--duration-normal) var(--ease-out) forwards;
+}
+
+.modal-backdrop.closing .settings-modal {
+  animation: modalSlideOut var(--duration-normal) var(--ease-out) forwards;
+}
+
+@keyframes modalSlideIn {
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes modalSlideOut {
+  to {
+    transform: scale(0.95);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-6);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.modal-close-btn {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.modal-close-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.modal-content {
+  padding: var(--space-6);
+}
+
+.modal-section {
+  margin-bottom: var(--space-8);
+}
+
+.modal-section:last-child {
+  margin-bottom: 0;
+}
+
+.modal-section h3 {
+  margin: 0 0 var(--space-4) 0;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+/* Scrollbar styling for modal */
+.settings-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.settings-modal::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.settings-modal::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--radius-full);
+}
+
+.settings-modal::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+```
+
+**JavaScript Behavior**:
+```javascript
+// Open modal
+function openSettingsModal() {
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.innerHTML = `
+    <div class="settings-modal">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-content">
+        <!-- Settings content here -->
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(backdrop);
+  
+  // Close handlers
+  const closeBtn = backdrop.querySelector('.modal-close-btn');
+  closeBtn.addEventListener('click', closeModal);
+  
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) closeModal();
+  });
+  
+  document.addEventListener('keydown', handleEscape);
+}
+
+// Close modal
+function closeModal() {
+  const backdrop = document.querySelector('.modal-backdrop');
+  if (!backdrop) return;
+  
+  backdrop.classList.add('closing');
+  setTimeout(() => {
+    backdrop.remove();
+    document.removeEventListener('keydown', handleEscape);
+  }, 200); // Match animation duration
+}
+
+// Handle Escape key
+function handleEscape(e) {
+  if (e.key === 'Escape') closeModal();
+}
+```
+
 ## Responsive Breakpoints
 
 ```css
 /* Mobile First Approach */
 :root {
   --sidebar-width: 0;
-  --agent-panel-width: 0;
 }
 
 /* Tablet */
@@ -876,7 +1300,6 @@ const handleInput = debounce((value) => {
 @media (min-width: 1024px) {
   :root {
     --sidebar-width: 260px;
-    --agent-panel-width: 400px;
   }
 }
 
@@ -884,7 +1307,19 @@ const handleInput = debounce((value) => {
 @media (min-width: 1440px) {
   :root {
     --sidebar-width: 280px;
-    --agent-panel-width: 420px;
+  }
+}
+
+/* Settings modal responsive */
+@media (max-width: 768px) {
+  .settings-modal {
+    width: 95%;
+    max-height: 95vh;
+  }
+  
+  .modal-header,
+  .modal-content {
+    padding: var(--space-4);
   }
 }
 ```
