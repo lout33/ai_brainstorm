@@ -1,11 +1,15 @@
 // OpenRouter API Client
 // Handles all communication with OpenRouter's unified API
+// Supports both client-side and proxy modes
+
+import { config } from './config.js';
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
 // Send chat completion request to OpenRouter
 export async function sendChatCompletion(modelId, messages, apiKey, options = {}) {
-  if (!apiKey) {
+  // In proxy mode, API key is not required (handled server-side)
+  if (!config.useProxy && !apiKey) {
     throw new Error('API key is required');
   }
 
@@ -15,21 +19,38 @@ export async function sendChatCompletion(modelId, messages, apiKey, options = {}
     ...options
   };
 
+  // Determine endpoint and headers based on mode
+  const endpoint = config.useProxy 
+    ? '/api/chat' 
+    : `${OPENROUTER_BASE_URL}/chat/completions`;
+  
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  
+  // Add authorization and referer headers only in client-side mode
+  if (!config.useProxy) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+    headers['HTTP-Referer'] = window.location.origin;
+    headers['X-Title'] = 'AI Brainstorm';
+  }
+
   try {
-    const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+    const response = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': window.location.origin,
-        'X-Title': 'Agentic Multi-Model Chat',
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || `API request failed: ${response.status}`);
+      
+      // Handle rate limit errors in proxy mode
+      if (response.status === 429 && errorData.retryAfter) {
+        throw new Error(`Rate limit exceeded. Please try again in ${errorData.retryAfter} seconds.`);
+      }
+      
+      throw new Error(errorData.error?.message || errorData.error || `API request failed: ${response.status}`);
     }
 
     const data = await response.json();
@@ -52,7 +73,8 @@ export function extractMessageContent(response) {
 
 // Send streaming chat completion request to OpenRouter
 export async function sendStreamingChatCompletion(modelId, messages, apiKey, onChunk, options = {}) {
-  if (!apiKey) {
+  // In proxy mode, API key is not required (handled server-side)
+  if (!config.useProxy && !apiKey) {
     throw new Error('API key is required');
   }
 
@@ -63,21 +85,38 @@ export async function sendStreamingChatCompletion(modelId, messages, apiKey, onC
     ...options
   };
 
+  // Determine endpoint and headers based on mode
+  const endpoint = config.useProxy 
+    ? '/api/chat' 
+    : `${OPENROUTER_BASE_URL}/chat/completions`;
+  
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  
+  // Add authorization and referer headers only in client-side mode
+  if (!config.useProxy) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+    headers['HTTP-Referer'] = window.location.origin;
+    headers['X-Title'] = 'AI Brainstorm';
+  }
+
   try {
-    const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+    const response = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': window.location.origin,
-        'X-Title': 'Agentic Multi-Model Chat',
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || `API request failed: ${response.status}`);
+      
+      // Handle rate limit errors in proxy mode
+      if (response.status === 429 && errorData.retryAfter) {
+        throw new Error(`Rate limit exceeded. Please try again in ${errorData.retryAfter} seconds.`);
+      }
+      
+      throw new Error(errorData.error?.message || errorData.error || `API request failed: ${response.status}`);
     }
 
     const reader = response.body.getReader();

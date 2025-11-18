@@ -1,8 +1,9 @@
 {
-  "name": "agentic-chat",
+  "name": "ai-brainstorm",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "Orchestrate multiple AI models to brainstorm and solve complex problems together",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

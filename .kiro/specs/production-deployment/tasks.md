@@ -1,0 +1,156 @@
+# Implementation Plan
+
+- [x] 1. Create Vercel configuration and environment setup
+  - [x] 1.1 Create `vercel.json` configuration file
+    - Define build command pointing to agentic-chat directory
+    - Set output directory to agentic-chat/dist
+    - Configure API route rewrites for serverless functions
+    - _Requirements: 1.1, 1.2, 1.3_
+  - [x] 1.2 Create environment configuration module (`agentic-chat/src/config.js`)
+    - Export config object that reads VITE_USE_PROXY environment variable
+    - Determine API endpoint based on proxy mode
+    - Provide defaults for all optional settings
+    - _Requirements: 4.1, 4.3_
+  - [x] 1.3 Create `.env.example` file
+    - Document all environment variables with descriptions
+    - Include examples for both client-side and proxy modes
+    - Add comments explaining when each variable is required
+    - _Requirements: 4.1, 4.2, 4.4_
+
+- [x] 2. Implement optional serverless proxy function
+  - [x] 2.1 Create serverless function file (`api/chat.js`)
+    - Set up Express-style handler for Vercel serverless
+    - Parse and validate incoming request body
+    - Extract model, messages, and streaming preference
+    - _Requirements: 3.1, 3.2_
+  - [x] 2.2 Implement rate limiting logic
+    - Create in-memory rate limit store with IP tracking
+    - Implement sliding window rate limiting (20 requests/hour default)
+    - Return 429 status with Retry-After header when limit exceeded
+    - Add configurable rate limit via environment variables
+    - _Requirements: 7.2_
+  - [x] 2.3 Implement OpenRouter proxy forwarding
+    - Build request to OpenRouter with proper headers (Authorization, HTTP-Referer, X-Title)
+    - Forward model and messages from client request
+    - Handle both streaming and non-streaming responses
+    - Return OpenRouter response to client
+    - _Requirements: 3.2, 3.3, 3.4, 3.5_
+  - [x] 2.4 Add request validation and error handling
+    - Validate request body structure and required fields
+    - Limit message payload size to prevent abuse
+    - Sanitize error messages to avoid leaking API keys or internal details
+    - Log errors server-side for debugging
+    - _Requirements: 7.1, 7.5_
+
+- [x] 3. Update OpenRouter client for proxy mode support
+  - [x] 3.1 Modify `sendChatCompletion` function
+    - Import config module to check proxy mode
+    - Conditionally set endpoint based on config.useProxy
+    - Include Authorization header only in client-side mode
+    - Send requests to /api/chat in proxy mode
+    - _Requirements: 3.1, 4.1_
+  - [x] 3.2 Modify `sendStreamingChatCompletion` function
+    - Apply same proxy mode logic as non-streaming
+    - Ensure SSE streaming works through proxy
+    - Handle errors from proxy endpoint
+    - _Requirements: 3.1, 3.3_
+  - [x] 3.3 Update error handling for proxy mode
+    - Parse and display rate limit errors with retry countdown
+    - Show user-friendly messages for proxy errors
+    - Maintain existing error handling for client-side mode
+    - _Requirements: 7.2_
+
+- [x] 4. Optimize Vite build configuration
+  - [x] 4.1 Create or update `agentic-chat/vite.config.js`
+    - Enable minification with terser
+    - Generate source maps for production debugging
+    - Configure manual chunks for vendor code splitting
+    - Set appropriate build target for modern browsers
+    - _Requirements: 6.1, 6.2, 6.3_
+  - [x] 4.2 Configure cache headers in `vercel.json`
+    - Set long cache TTL for static assets (js, css, images)
+    - Disable caching for index.html
+    - Enable compression for text assets
+    - _Requirements: 6.4_
+
+- [x] 5. Create comprehensive deployment documentation
+  - [x] 5.1 Create root `README.md` with deployment guide
+    - Add project overview and features
+    - Include "Deploy to Vercel" button with pre-configured environment variables
+    - Document quick start steps (fork, deploy, configure)
+    - Explain both deployment modes with comparison table
+    - _Requirements: 5.1, 5.2, 5.3_
+  - [x] 5.2 Add OpenRouter API key instructions
+    - Step-by-step guide to create OpenRouter account
+    - How to generate API key
+    - Where to enter key in the application
+    - Security best practices for API keys
+    - _Requirements: 2.4, 5.4_
+  - [x] 5.3 Document environment variables
+    - Create table with all variables, defaults, and descriptions
+    - Provide examples for client-side mode setup
+    - Provide examples for proxy mode setup
+    - Explain when each variable is required
+    - _Requirements: 4.4, 5.2_
+  - [x] 5.4 Add local development instructions
+    - Prerequisites (Node.js version, npm)
+    - Clone and install steps
+    - How to run in client-side mode locally
+    - How to test proxy mode with `vercel dev`
+    - _Requirements: 5.1_
+  - [x] 5.5 Create `LICENSE` file
+    - Add MIT or Apache 2.0 license (choose appropriate one)
+    - Include copyright notice
+    - _Requirements: 5.5_
+  - [ ]* 5.6 Create `CONTRIBUTING.md` guide
+    - Explain how to fork and customize
+    - Code style guidelines
+    - How to submit pull requests
+    - _Requirements: 5.1_
+
+- [x] 6. Add API key management UI improvements
+  - [x] 6.1 Create API key setup modal for first-time users
+    - Show modal when no API key is detected in localStorage
+    - Include input field for API key
+    - Add link to OpenRouter signup/key generation
+    - Provide clear instructions and security warnings
+    - _Requirements: 2.2, 2.4_
+  - [x] 6.2 Add API key management in settings
+    - Allow users to view (masked) and update their API key
+    - Add button to clear/reset API key
+    - Show warning before clearing key
+    - _Requirements: 2.1, 2.3_
+  - [x] 6.3 Add proxy mode indicator in UI
+    - Show badge or indicator when running in proxy mode
+    - Display "Using managed API" or similar message
+    - Hide API key input when in proxy mode
+    - _Requirements: 3.1_
+
+- [ ] 7. Test deployment in both modes
+  - [ ] 7.1 Test client-side mode deployment
+    - Deploy to Vercel without proxy environment variables
+    - Verify API key prompt appears on first visit
+    - Test entering API key and making requests
+    - Verify API key persists after page refresh
+    - Test with invalid API key to verify error handling
+    - _Requirements: 1.2, 2.1, 2.2, 2.3_
+  - [ ] 7.2 Test proxy mode deployment
+    - Deploy to Vercel with VITE_USE_PROXY=true and OPENROUTER_API_KEY set
+    - Verify no API key prompt appears
+    - Test making requests through proxy
+    - Verify streaming responses work correctly
+    - Test rate limiting by exceeding limit
+    - Verify rate limit error message and retry countdown
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 7.2_
+  - [ ] 7.3 Verify build optimization
+    - Check that production build is minified
+    - Verify source maps are generated
+    - Test that assets load quickly
+    - Check browser network tab for proper caching headers
+    - _Requirements: 6.1, 6.2, 6.3, 6.4_
+  - [ ]* 7.4 Security testing
+    - Verify API keys are not exposed in client-side code or logs
+    - Test that proxy sanitizes error messages
+    - Verify HTTPS is enforced
+    - Test request validation in proxy mode
+    - _Requirements: 7.1, 7.3, 7.4, 7.5_
