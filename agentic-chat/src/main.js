@@ -119,8 +119,20 @@ function init() {
   });
 
   sendBtn.addEventListener('click', handleSendMessage);
-  chatInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleSendMessage();
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  });
+  
+  // Auto-grow textarea
+  chatInput.addEventListener('input', () => {
+    chatInput.style.height = 'auto';
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 200) + 'px';
+    
+    // Enable/disable send button based on content
+    sendBtn.disabled = !chatInput.value.trim();
   });
 
   prevBtn.addEventListener('click', handlePrevConversation);
@@ -416,13 +428,16 @@ function renderCurrentConversation() {
   chatMessages.innerHTML = '';
 
   if (!conversation) {
-    chatMessages.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No active conversation. Ask the agent to create some!</div>';
+    chatMessages.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-tertiary);">No active conversation. Ask the agent to create some!</div>';
     return;
   }
 
   conversation.history.forEach(msg => {
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${msg.role}`;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble';
 
     const header = document.createElement('div');
     header.className = 'message-header';
@@ -434,8 +449,9 @@ function renderCurrentConversation() {
     content.className = 'message-content';
     content.textContent = msg.content;
 
-    msgDiv.appendChild(header);
-    msgDiv.appendChild(content);
+    bubble.appendChild(header);
+    bubble.appendChild(content);
+    msgDiv.appendChild(bubble);
     chatMessages.appendChild(msgDiv);
   });
 
@@ -443,10 +459,13 @@ function renderCurrentConversation() {
   if (conversation.history.length === 1 && conversation.history[0].role === 'user') {
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'message assistant loading';
-    loadingDiv.innerHTML = `
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble';
+    bubble.innerHTML = `
       <div class="message-header">${conversation.modelName}</div>
       <div class="message-content">Thinking...</div>
     `;
+    loadingDiv.appendChild(bubble);
     chatMessages.appendChild(loadingDiv);
   }
 
