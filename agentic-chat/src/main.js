@@ -1,6 +1,6 @@
 import './style.css';
 import { loadApiKey, saveApiKey, hasApiKey } from './api-key-manager.js';
-import { getActiveModels, addActiveModel, removeActiveModel, loadPreset } from './active-models.js';
+import { getActiveModels, addActiveModel, removeActiveModel, loadPreset, getCurrentPreset } from './active-models.js';
 import { loadAgentModel, saveAgentModel } from './agent-model-manager.js';
 import {
   addAgentMessage,
@@ -96,6 +96,9 @@ function openSettingsModal() {
   const agentModel = loadAgentModel();
   modalAgentModelSelect.value = agentModel;
   
+  // Update preset dropdown to reflect current state
+  updatePresetDropdown();
+  
   renderModalActiveModels();
 }
 
@@ -142,6 +145,19 @@ function handleModalAgentModelChange() {
   }
 }
 
+// Update preset dropdown to reflect current state
+function updatePresetDropdown() {
+  const currentPreset = getCurrentPreset();
+  modalPresetSelect.value = currentPreset;
+  
+  // Add visual indicator when a preset is active
+  if (currentPreset) {
+    modalPresetSelect.classList.add('preset-active');
+  } else {
+    modalPresetSelect.classList.remove('preset-active');
+  }
+}
+
 // Modal Active Models Management
 function handleModalPresetChange() {
   const presetName = modalPresetSelect.value;
@@ -150,7 +166,7 @@ function handleModalPresetChange() {
   const result = loadPreset(presetName);
   if (result.success) {
     renderModalActiveModels();
-    modalPresetSelect.value = ''; // Reset dropdown
+    updatePresetDropdown(); // Update dropdown to show selected preset
   } else {
     alert(result.message);
   }
@@ -197,6 +213,7 @@ function handleModalAddModel() {
     modalModelIdInput.value = '';
     modalModelNameInput.value = '';
     renderModalActiveModels();
+    updatePresetDropdown(); // Update dropdown (will be empty since custom)
   } else {
     alert(result.message);
   }
@@ -206,6 +223,7 @@ function handleModalRemoveModel(modelId) {
   if (confirm('Remove this model?')) {
     removeActiveModel(modelId);
     renderModalActiveModels();
+    updatePresetDropdown(); // Update dropdown (might match a preset or be empty)
   }
 }
 
@@ -230,6 +248,9 @@ function init() {
   // Load agent model into modal
   const agentModel = loadAgentModel();
   modalAgentModelSelect.value = agentModel;
+
+  // Load current preset into modal (auto-detected or saved)
+  updatePresetDropdown();
 
   // Initialize branch indicator
   const mainChat = document.querySelector('.main-chat');

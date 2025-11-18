@@ -2,6 +2,7 @@
 // Manages user's list of active models for conversations
 
 const STORAGE_KEY = 'agentic_chat_active_models';
+const PRESET_STORAGE_KEY = 'agentic_chat_selected_preset';
 
 // Model presets
 export const MODEL_PRESETS = {
@@ -84,6 +85,7 @@ export function addActiveModel(modelId, modelName) {
 
   activeModels.push(newModel);
   saveActiveModels();
+  clearSelectedPreset(); // Clear preset when manually adding models
   
   return { success: true, model: newModel };
 }
@@ -97,6 +99,7 @@ export function removeActiveModel(modelId) {
 
   activeModels.splice(index, 1);
   saveActiveModels();
+  clearSelectedPreset(); // Clear preset when manually removing models
   
   return { success: true };
 }
@@ -115,7 +118,75 @@ export function loadPreset(presetName) {
   }));
   
   saveActiveModels();
+  saveSelectedPreset(presetName);
   return { success: true, models: activeModels };
+}
+
+// Save selected preset to localStorage
+export function saveSelectedPreset(presetName) {
+  try {
+    localStorage.setItem(PRESET_STORAGE_KEY, presetName);
+  } catch (error) {
+    console.error('Failed to save selected preset:', error);
+  }
+}
+
+// Load selected preset from localStorage
+export function loadSelectedPreset() {
+  try {
+    return localStorage.getItem(PRESET_STORAGE_KEY) || '';
+  } catch (error) {
+    console.error('Failed to load selected preset:', error);
+    return '';
+  }
+}
+
+// Clear selected preset (when models are manually modified)
+export function clearSelectedPreset() {
+  try {
+    localStorage.removeItem(PRESET_STORAGE_KEY);
+  } catch (error) {
+    console.error('Failed to clear selected preset:', error);
+  }
+}
+
+// Detect which preset matches the current active models
+export function detectCurrentPreset() {
+  // Get current model IDs (sorted for comparison)
+  const currentModelIds = activeModels.map(m => m.id).sort();
+  
+  // Check each preset
+  for (const [presetName, presetModels] of Object.entries(MODEL_PRESETS)) {
+    const presetModelIds = presetModels.map(m => m.id).sort();
+    
+    // Check if arrays match
+    if (currentModelIds.length === presetModelIds.length &&
+        currentModelIds.every((id, index) => id === presetModelIds[index])) {
+      return presetName;
+    }
+  }
+  
+  // No matching preset found
+  return '';
+}
+
+// Get the current preset (either saved or detected)
+export function getCurrentPreset() {
+  // First check if there's a saved preset
+  const savedPreset = loadSelectedPreset();
+  
+  // Verify the saved preset still matches current models
+  if (savedPreset) {
+    const detectedPreset = detectCurrentPreset();
+    if (detectedPreset === savedPreset) {
+      return savedPreset;
+    }
+    // Saved preset doesn't match anymore, clear it
+    clearSelectedPreset();
+  }
+  
+  // Try to detect preset from current models
+  return detectCurrentPreset();
 }
 
 // Get available presets

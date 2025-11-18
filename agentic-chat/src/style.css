@@ -223,9 +223,10 @@ body {
 }
 
 .message.user .message-bubble {
-  background: var(--msg-user-bg);
-  color: var(--msg-user-text);
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--text-primary);
   border-bottom-right-radius: var(--radius-sm);
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .message.assistant .message-bubble {
@@ -924,6 +925,14 @@ body:has(.agent-panel.collapsed) .branch-indicator {
   flex-shrink: 0;
 }
 
+.preset-selector-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
 .modal-input-group {
   display: flex;
   gap: var(--space-2);
@@ -985,6 +994,7 @@ body:has(.agent-panel.collapsed) .branch-indicator {
   flex: 1;
   min-width: 0;
   transition: all var(--duration-fast) var(--ease-out);
+  font-weight: var(--font-medium);
 }
 
 .modal-select-inline:hover {
@@ -996,6 +1006,13 @@ body:has(.agent-panel.collapsed) .branch-indicator {
   outline: none;
   border-color: var(--brand-primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Highlight when a preset is active */
+.modal-select-inline.preset-active {
+  border-color: var(--brand-primary);
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--brand-primary);
 }
 
 .modal-btn {
