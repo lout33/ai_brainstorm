@@ -8,8 +8,18 @@
   </head>
   <body>
     <div id="app">
-      <!-- Main Chat (Left) -->
+      <!-- Session History (Left Sidebar) -->
+      <div id="session-history" class="session-history">
+        <div class="session-header">
+          <h2>Sessions</h2>
+          <button id="new-session-btn" class="new-session-btn">+ New</button>
+        </div>
+        <div id="session-list" class="session-list"></div>
+      </div>
+
+      <!-- Main Chat (Center) -->
       <div id="main-chat" class="main-chat">
+        <button id="toggle-sidebar-btn" class="toggle-sidebar-btn" title="Toggle Sessions">☰</button>
         <div id="chat-messages" class="chat-messages"></div>
         <div class="chat-navigation">
           <button id="prev-btn" class="nav-btn">&lt;</button>

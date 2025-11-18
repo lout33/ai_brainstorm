@@ -12,6 +12,45 @@ let conversations = [];
 let currentConversationIndex = 0;
 let conversationIdCounter = 1;
 
+// State change notification callback
+let stateChangeCallback = null;
+
+// Register callback for state changes (used by session manager)
+export function onStateChange(callback) {
+  stateChangeCallback = callback;
+}
+
+// Notify about state changes
+function notifyStateChange() {
+  if (stateChangeCallback) {
+    stateChangeCallback();
+  }
+}
+
+// Get current state (for session manager)
+export function getState() {
+  return {
+    agentHistory: [...agentHistory],
+    conversations: conversations.map(c => ({ ...c, history: [...c.history] })),
+    currentConversationIndex
+  };
+}
+
+// Set state (for session manager)
+export function setState(state) {
+  if (!state) return;
+  
+  agentHistory = state.agentHistory ? [...state.agentHistory] : [];
+  conversations = state.conversations ? state.conversations.map(c => ({ ...c, history: [...c.history] })) : [];
+  currentConversationIndex = state.currentConversationIndex || 0;
+  
+  // Update conversation ID counter to avoid conflicts
+  if (conversations.length > 0) {
+    const maxId = Math.max(...conversations.map(c => parseInt(c.id) || 0));
+    conversationIdCounter = maxId + 1;
+  }
+}
+
 // AGENT CHAT HISTORY (right panel)
 export function addAgentMessage(role, content) {
   const message = {
@@ -20,6 +59,7 @@ export function addAgentMessage(role, content) {
     timestamp: Date.now()
   };
   agentHistory.push(message);
+  notifyStateChange();
   return message;
 }
 
@@ -67,6 +107,9 @@ export async function createConversations(modelIds, initialPrompt, onConversatio
     currentConversationIndex = conversations.length - newConversations.length;
   }
   
+  // Notify about state change
+  notifyStateChange();
+  
   // Notify UI that conversations are created (before responses arrive)
   if (onConversationCreated) {
     onConversationCreated(newConversations);
@@ -89,6 +132,9 @@ export async function createConversations(modelIds, initialPrompt, onConversatio
       
       conv.history.push(assistantMessage);
       
+      // Notify about state change
+      notifyStateChange();
+      
       // Notify UI that this conversation got a response
       if (onConversationCreated) {
         onConversationCreated(newConversations);
@@ -100,6 +146,9 @@ export async function createConversations(modelIds, initialPrompt, onConversatio
         content: `Error: ${error.message}`,
         timestamp: Date.now()
       });
+      
+      // Notify about state change
+      notifyStateChange();
       
       // Notify UI about error
       if (onConversationCreated) {
@@ -134,6 +183,7 @@ export async function sendUserMessage(message, onStreamChunk = null) {
     source: 'user'
   };
   conversation.history.push(userMessage);
+  notifyStateChange();
 
   // Prepare messages for API (without source field)
   const apiMessages = conversation.history.map(msg => ({
@@ -173,6 +223,7 @@ export async function sendUserMessage(message, onStreamChunk = null) {
     };
     
     conversation.history.push(assistantMessage);
+    notifyStateChange();
     return assistantMessage;
   } catch (error) {
     console.error('Error sending message:', error);
@@ -182,6 +233,7 @@ export async function sendUserMessage(message, onStreamChunk = null) {
       timestamp: Date.now()
     };
     conversation.history.push(errorMessage);
+    notifyStateChange();
     throw error;
   }
 }
@@ -194,12 +246,14 @@ export function getCurrentConversation() {
 export function switchToNextConversation() {
   if (conversations.length === 0) return null;
   currentConversationIndex = (currentConversationIndex + 1) % conversations.length;
+  notifyStateChange();
   return getCurrentConversation();
 }
 
 export function switchToPreviousConversation() {
   if (conversations.length === 0) return null;
   currentConversationIndex = (currentConversationIndex - 1 + conversations.length) % conversations.length;
+  notifyStateChange();
   return getCurrentConversation();
 }
 
@@ -275,6 +329,7 @@ export async function branchConversation(parentConversationId, branchCount, prom
 
   // Add to conversations array
   conversations.push(...newBranches);
+  notifyStateChange();
   
   // Send prompts to all branches in parallel
   const promises = newBranches.map(async (branch) => {
@@ -298,6 +353,7 @@ export async function branchConversation(parentConversationId, branchCount, prom
       };
       
       branch.history.push(assistantMessage);
+      notifyStateChange();
     } catch (error) {
       console.error(`Error in branch ${branch.id}:`, error);
       branch.history.push({
@@ -305,6 +361,7 @@ export async function branchConversation(parentConversationId, branchCount, prom
         content: `Error: ${error.message}`,
         timestamp: Date.now()
       });
+      notifyStateChange();
     }
   });
 

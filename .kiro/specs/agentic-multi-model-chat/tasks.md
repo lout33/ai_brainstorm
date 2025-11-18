@@ -157,15 +157,96 @@
     - Already implemented in task 2.2
     - _Requirements: 4.4_
 
-- [ ] 11. MVP Testing
-  - [ ] 11.1 Test core workflows manually
+- [ ] 11. Implement Session Manager
+  - [x] 11.1 Create session-manager.js module
+    - Implement localStorage-based session storage
+    - Create createNewSession function
+    - Implement saveCurrentSession function
+    - Add loadSession function
+    - Implement deleteSession function
+    - Add getAllSessions function
+    - Create auto-save functionality
+    - Implement restoreMostRecentSession for app initialization
+    - _Requirements: 7.1, 7.2, 7.6, 7.7_
+
+  - [x] 11.2 Integrate session manager with conversation manager
+    - Add getState function to conversation manager
+    - Add setState function to conversation manager
+    - Connect session manager to conversation manager for state persistence
+    - Implement state change notifications for auto-save
+    - _Requirements: 7.1, 7.7_
+
+- [ ] 12. Build Session History UI
+  - [x] 12.1 Update HTML layout for three-panel design
+    - Add left sidebar div for session history (~250px width)
+    - Update main chat to center position
+    - Adjust CSS for three-column flexbox layout
+    - _Requirements: 7.3_
+
+  - [x] 12.2 Create session-history-ui.js module
+    - Implement renderSessionList function
+    - Add "New Session" button at top
+    - Create session item rendering with name and timestamp
+    - Add delete button for each session
+    - Implement current session highlighting
+    - Add click handlers for session selection
+    - _Requirements: 7.3, 7.4, 7.5_
+
+  - [x] 12.3 Wire session UI to session manager
+    - Connect "New Session" button to createNewSession
+    - Connect session selection to loadSession
+    - Connect delete buttons to deleteSession
+    - Update UI when sessions change
+    - Show confirmation dialog for session deletion
+    - _Requirements: 7.2, 7.4, 7.5_
+
+- [ ] 13. Implement Session Lifecycle
+  - [x] 13.1 Add session initialization on app load
+    - Call restoreMostRecentSession when app starts
+    - Create new session if none exists
+    - Render session history UI
+    - _Requirements: 7.6_
+
+  - [x] 13.2 Implement auto-save on state changes
+    - Trigger auto-save when agent messages are added
+    - Trigger auto-save when conversations are created
+    - Trigger auto-save when user sends messages
+    - Debounce auto-save to avoid excessive writes
+    - _Requirements: 7.7_
+
+  - [x] 13.3 Handle session switching
+    - Save current session before switching
+    - Load selected session state
+    - Update all UI components with new session data
+    - Update session history to highlight new current session
+    - _Requirements: 7.2, 7.4, 7.7_
+
+- [ ] 14. Add Session Error Handling
+  - [x] 14.1 Handle localStorage quota errors
+    - Catch quota exceeded errors
+    - Display user-friendly message
+    - Suggest deleting old sessions
+    - _Requirements: 7.1_
+
+  - [ ] 14.2 Handle session load failures
+    - Catch errors when loading corrupted sessions
+    - Display error message
+    - Create new session as fallback
+    - Log error for debugging
+    - _Requirements: 7.4_
+
+- [ ] 15. MVP Testing
+  - [ ] 15.1 Test core workflows manually
     - Test create_conversations with "create 3 jokes"
     - Test navigation between conversations
     - Test direct chat in current conversation
     - Test basic branching
-    - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3_
+    - Test session creation and switching
+    - Test session deletion
+    - Test session persistence across page reloads
+    - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 7.2, 7.4, 7.5, 7.6_
 
-  - [ ]* 11.2 Add simple README
+  - [ ]* 15.2 Add simple README
     - Basic setup instructions
     - How to add API key
     - Example agent commands

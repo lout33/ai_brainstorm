@@ -11,26 +11,32 @@ The architecture follows the agent pattern demonstrated in docs/agent.js, using 
 ### High-Level Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     User Interface Layer                     │
-│  ┌──────────────────────────────────┐  ┌─────────────────┐  │
-│  │   Main Chat Interface (Left)     │  │  Agent Panel    │  │
-│  │   - Classic Chatbot UI           │  │  (Right Side)   │  │
-│  │   - User Input                   │  │                 │  │
-│  │   - Model Responses              │  │  - Agent Chat   │  │
-│  │   - Conversation History         │  │  - Commands     │  │
-│  │                                  │  │  - Model Info   │  │
-│  └──────────────────────────────────┘  └─────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                        User Interface Layer                          │
+│  ┌──────────┐  ┌──────────────────────┐  ┌─────────────────┐       │
+│  │ Session  │  │  Main Chat Interface │  │  Agent Panel    │       │
+│  │ History  │  │  (Center)            │  │  (Right Side)   │       │
+│  │ (Left)   │  │  - Classic Chatbot   │  │                 │       │
+│  │          │  │  - User Input        │  │  - Agent Chat   │       │
+│  │ - List   │  │  - Model Responses   │  │  - Commands     │       │
+│  │ - New    │  │  - Conversation Nav  │  │  - Model Info   │       │
+│  │ - Delete │  │                      │  │                 │       │
+│  └──────────┘  └──────────────────────┘  └─────────────────┘       │
+└─────────────────────────────────────────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                   Application Logic Layer                    │
 │  ┌──────────────────────────────────────────────────────┐   │
+│  │            Session Manager Module                    │   │
+│  │  - Session Persistence (localStorage)                │   │
+│  │  - Session Creation/Loading/Deletion                 │   │
+│  │  - Auto-save/Auto-restore                            │   │
+│  └──────────────────────────────────────────────────────┘   │
+│  ┌──────────────────────────────────────────────────────┐   │
 │  │            Agent Orchestrator Module                 │   │
 │  │  - Command Interpretation                            │   │
 │  │  - Model Selection Logic                             │   │
-│  │  - Session Management                                │   │
 │  └──────────────────────────────────────────────────────┘   │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │            Conversation Manager Module               │   │
@@ -299,7 +305,71 @@ Agent branches from conversation '1':
 ]}
 ```
 
-### 3. OpenRouter API Client (`openrouter-client.js`)
+### 3. Session Manager Module (`session-manager.js`)
+
+**Purpose**: Manages session persistence, creation, loading, and deletion using localStorage.
+
+**Key Functions**:
+```javascript
+// Creates a new session and saves current session
+createNewSession()
+
+// Saves current session state to localStorage
+saveCurrentSession()
+
+// Loads a specific session by ID
+loadSession(sessionId)
+
+// Deletes a session from localStorage
+deleteSession(sessionId)
+
+// Gets all saved sessions
+getAllSessions()
+
+// Gets current session ID
+getCurrentSessionId()
+
+// Auto-saves current session (called on state changes)
+autoSave()
+
+// Restores most recent session on app load
+restoreMostRecentSession()
+```
+
+**Data Structure**:
+```javascript
+// localStorage key: 'chat-sessions'
+{
+  sessions: {
+    'session-uuid-1': {
+      id: 'session-uuid-1',
+      name: 'Session 1', // Auto-generated or user-provided
+      createdAt: timestamp,
+      lastModified: timestamp,
+      agentHistory: [...], // From conversation manager
+      conversations: [...], // From conversation manager
+      currentConversationIndex: number
+    },
+    'session-uuid-2': { ... }
+  },
+  currentSessionId: 'session-uuid-1',
+  sessionOrder: ['session-uuid-2', 'session-uuid-1'] // Most recent first
+}
+```
+
+**Session Lifecycle**:
+1. **App Load**: Restore most recent session or create new if none exists
+2. **User Creates New Session**: Save current session, initialize fresh state
+3. **User Switches Session**: Auto-save current, load selected session
+4. **User Deletes Session**: Remove from localStorage, load most recent remaining
+5. **Auto-save**: Triggered on conversation changes, agent messages, etc.
+
+**Integration with Conversation Manager**:
+- Session Manager calls Conversation Manager's `getState()` to get current state
+- Session Manager calls Conversation Manager's `setState()` to restore session
+- Conversation Manager notifies Session Manager on state changes for auto-save
+
+### 4. OpenRouter API Client (`openrouter-client.js`)
 
 **Purpose**: Handles all communication with OpenRouter's unified API.
 
@@ -334,7 +404,7 @@ async streamChatCompletion(modelId, messages, onChunk)
 - Rate limits: Queue requests and inform user
 - Invalid API key: Prompt user to configure
 
-### 4. Active Models Manager (`active-models.js`)
+### 5. Active Models Manager (`active-models.js`)
 
 **Purpose**: Manages user's list of active models for conversations.
 
@@ -371,9 +441,55 @@ saveActiveModels(models)
 - Just distribute active models across requested conversations
 - If user has 2 active models and requests 3 conversations → [model1, model2, model1]
 
-### 5. Chat Interface (`ui-manager.js`)
+### 6. Session History UI (`session-history-ui.js`)
 
-**Purpose**: Manages the user interface and user interactions.
+**Purpose**: Manages the session history panel on the left side of the interface.
+
+**Key Functions**:
+```javascript
+// Renders the session history list
+renderSessionList(sessions)
+
+// Handles session selection
+onSessionSelect(sessionId)
+
+// Handles new session button click
+onNewSessionClick()
+
+// Handles delete session button click
+onDeleteSessionClick(sessionId)
+
+// Updates UI to highlight current session
+highlightCurrentSession(sessionId)
+
+// Shows confirmation dialog for session deletion
+showDeleteConfirmation(sessionId)
+```
+
+**UI Layout**:
+- Fixed left sidebar (e.g., 250px width)
+- "New Session" button at top
+- Scrollable list of sessions below
+- Each session item shows:
+  - Session name/title (auto-generated from first message or timestamp)
+  - Last modified timestamp
+  - Delete button (trash icon)
+- Current session highlighted
+- Click session to load it
+- Hover effects for better UX
+
+**Session Display Format**:
+```javascript
+{
+  displayName: string, // "Session 1" or first agent message preview
+  timestamp: string, // "2 hours ago" or "Nov 17, 2025"
+  isActive: boolean
+}
+```
+
+### 7. Chat Interface (`ui-manager.js`)
+
+**Purpose**: Manages the main chat user interface and user interactions.
 
 **Key Functions**:
 ```javascript
@@ -406,7 +522,15 @@ addUserModel(modelId, modelName, tags)
 ```
 
 **UI Layout**:
-- **Main Chat (Left)**: Classic chatbot interface where users chat with selected models
+- **Session History (Left Sidebar)**: Session management panel
+  - Fixed width sidebar (~250px)
+  - "New Session" button at top
+  - Scrollable list of saved sessions
+  - Each session shows name and timestamp
+  - Delete button for each session
+  - Current session highlighted
+  
+- **Main Chat (Center)**: Classic chatbot interface where users chat with selected models
   - Shows one model's response at a time in conversation flow
   - Navigation buttons ("<" and ">") to switch between model responses
   - Each message labeled with current model name
@@ -456,15 +580,40 @@ addUserModel(modelId, modelName, tags)
 }
 ```
 
-### Session State
+### Session
 ```javascript
 {
-  sessionId: string,
-  createdAt: number,
-  mode: 'agent' | 'multi-model' | 'focused',
-  activeModels: string[], // Array of model IDs
-  focusedModelId: string | null,
-  conversationHistory: Message[]
+  id: string, // UUID
+  name: string, // Auto-generated or user-provided
+  createdAt: number, // Timestamp
+  lastModified: number, // Timestamp
+  agentHistory: [
+    { role: 'user' | 'assistant', content: string, timestamp: number }
+  ],
+  conversations: [
+    {
+      id: string,
+      modelId: string,
+      modelName: string,
+      parentId: string | null,
+      history: [...],
+      branchPoint: number | null
+    }
+  ],
+  currentConversationIndex: number
+}
+```
+
+### Session Storage (localStorage)
+```javascript
+{
+  sessions: {
+    'session-uuid-1': Session,
+    'session-uuid-2': Session,
+    ...
+  },
+  currentSessionId: string,
+  sessionOrder: string[] // Array of session IDs, most recent first
 }
 ```
 
@@ -498,6 +647,12 @@ addUserModel(modelId, modelName, tags)
    - Failed to render response → Log error, show fallback UI
    - Session state corruption → Reset session, preserve history
 
+4. **Session Errors**:
+   - localStorage quota exceeded → Prompt user to delete old sessions
+   - Failed to load session → Show error, create new session
+   - Failed to save session → Retry, notify user if persistent
+   - Session not found → Load most recent or create new
+
 ### Error Display Strategy
 - Non-blocking notifications for minor errors
 - Modal dialogs for critical errors requiring user action
@@ -513,17 +668,24 @@ addUserModel(modelId, modelName, tags)
    - Test model selection logic with different task types
    - Test response generation
 
-2. **Conversation Manager**:
-   - Test session creation and management
+2. **Session Manager**:
+   - Test session creation and persistence
+   - Test session loading and switching
+   - Test session deletion
+   - Test auto-save functionality
+   - Test localStorage quota handling
+
+3. **Conversation Manager**:
+   - Test conversation creation and management
    - Test message routing to multiple models
    - Test history management
 
-3. **OpenRouter Client**:
+4. **OpenRouter Client**:
    - Test request formatting
    - Test response parsing
    - Test error handling with mocked responses
 
-4. **Model Registry**:
+5. **Model Registry**:
    - Test model search and ranking
    - Test capability matching
    - Test metadata parsing
@@ -554,10 +716,18 @@ addUserModel(modelId, modelName, tags)
    - User tests both with coding question
    - User compares responses
 
-3. **Error Recovery**:
+3. **Session Management**:
+   - Create new session, verify current session is saved
+   - Switch between sessions, verify state is preserved
+   - Delete a session, verify it's removed from list
+   - Reload app, verify most recent session is restored
+   - Create multiple sessions, verify they appear in chronological order
+
+4. **Error Recovery**:
    - Test with invalid API key
    - Test with network disconnection
    - Test with unavailable model
+   - Test localStorage quota exceeded scenario
 
 ## Implementation Notes
 
@@ -671,10 +841,14 @@ You are an AI agent orchestrator that helps users explore multiple AI models.
 
 1. **Streaming Responses**: Real-time token streaming from models
 2. **Model Voting**: Users can vote on best responses
-3. **Session Persistence**: Save and restore conversation sessions
-4. **Model Presets**: Pre-configured model combinations for common tasks
-5. **Cost Tracking**: Display token usage and estimated costs
-6. **Model Import/Export**: Share model lists between users
-7. **Response Comparison View**: Side-by-side diff of model responses
-8. **Export Conversations**: Download chat history as JSON/Markdown
-9. **Model Discovery Helper**: Suggest popular OpenRouter models to add
+3. **Session Naming**: Allow users to rename sessions with custom names
+4. **Session Search**: Search through session history by content or date
+5. **Session Export/Import**: Export sessions as JSON files and import them
+6. **Model Presets**: Pre-configured model combinations for common tasks
+7. **Cost Tracking**: Display token usage and estimated costs
+8. **Model Import/Export**: Share model lists between users
+9. **Response Comparison View**: Side-by-side diff of model responses
+10. **Export Conversations**: Download chat history as JSON/Markdown
+11. **Model Discovery Helper**: Suggest popular OpenRouter models to add
+12. **Session Tags**: Tag sessions for better organization
+13. **Session Archiving**: Archive old sessions to separate storage

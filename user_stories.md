@@ -145,3 +145,8 @@ session2:
 ////
 
 also ways to clean it, and a new way to create , i mean lets manage the sessions , lets put it on the left like a claiss history of sessions
+
+
+---
+
+lets now think in how to add the branch feature, the idea is to have duplciated bracned but in the ui we show like children, this ways the user dont get overheml 

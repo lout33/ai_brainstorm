@@ -1,7 +1,7 @@
 import './style.css';
 import { loadApiKey, saveApiKey, hasApiKey } from './api-key-manager.js';
 import { getActiveModels, addActiveModel, removeActiveModel } from './active-models.js';
-import { loadAgentModel, saveAgentModel, getAgentModel } from './agent-model-manager.js';
+import { loadAgentModel, saveAgentModel } from './agent-model-manager.js';
 import {
   addAgentMessage,
   getAgentHistory,
@@ -12,12 +12,31 @@ import {
   switchToNextConversation,
   switchToPreviousConversation,
   getCurrentIndex,
-  getTotalConversations
+  getTotalConversations,
+  getState,
+  setState,
+  onStateChange as onConversationStateChange
 } from './conversation-manager.js';
 import { interpretCommand, findTargetConversation } from './agent-orchestrator.js';
 import { getAllConversations } from './conversation-manager.js';
+import {
+  createNewSession,
+  saveCurrentSession,
+  loadSession,
+  deleteSession,
+  getAllSessions,
+  getCurrentSessionId,
+  autoSave,
+  restoreMostRecentSession,
+  onStateChange as onSessionStateChange
+} from './session-manager.js';
+import { renderSessionList, showDeleteConfirmation } from './session-history-ui.js';
 
 // DOM Elements
+const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
+const sessionHistory = document.getElementById('session-history');
+const newSessionBtn = document.getElementById('new-session-btn');
+
 const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
 const sendBtn = document.getElementById('send-btn');
@@ -41,6 +60,16 @@ const agentSendBtn = document.getElementById('agent-send-btn');
 
 // Initialize
 function init() {
+  // Setup session manager callbacks
+  onSessionStateChange(() => getState());
+  onConversationStateChange(() => autoSave());
+  
+  // Restore most recent session
+  const session = restoreMostRecentSession();
+  if (session) {
+    setState(session);
+  }
+  
   // Load API key
   const apiKey = loadApiKey();
   if (apiKey) {
@@ -51,10 +80,20 @@ function init() {
   const agentModel = loadAgentModel();
   agentModelSelect.value = agentModel;
 
-  // Render active models
+  // Render UI
   renderActiveModels();
+  renderSessionHistory();
+  renderAgentMessages();
+  renderCurrentConversation();
+  updateConversationIndicator();
+  
+  // Set initial toggle button state
+  toggleSidebarBtn.textContent = '✕';
+  toggleSidebarBtn.title = 'Hide Sessions';
 
   // Setup event listeners
+  toggleSidebarBtn.addEventListener('click', handleToggleSidebar);
+  newSessionBtn.addEventListener('click', handleNewSession);
   saveApiKeyBtn.addEventListener('click', handleSaveApiKey);
   agentModelSelect.addEventListener('change', handleAgentModelChange);
   addModelBtn.addEventListener('click', handleAddModel);
@@ -70,8 +109,88 @@ function init() {
 
   prevBtn.addEventListener('click', handlePrevConversation);
   nextBtn.addEventListener('click', handleNextConversation);
+}
 
-  updateConversationIndicator();
+// Sidebar Toggle
+function handleToggleSidebar() {
+  sessionHistory.classList.toggle('collapsed');
+  updateToggleButton();
+}
+
+function updateToggleButton() {
+  if (sessionHistory.classList.contains('collapsed')) {
+    toggleSidebarBtn.textContent = '☰';
+    toggleSidebarBtn.title = 'Show Sessions';
+  } else {
+    toggleSidebarBtn.textContent = '✕';
+    toggleSidebarBtn.title = 'Hide Sessions';
+  }
+}
+
+// Session Management
+function renderSessionHistory() {
+  const sessions = getAllSessions();
+  const currentSessionId = getCurrentSessionId();
+  renderSessionList(sessions, currentSessionId, handleSessionSelect, handleDeleteSession);
+}
+
+function handleNewSession() {
+  try {
+    const newSession = createNewSession();
+    setState(newSession);
+    renderSessionHistory();
+    renderAgentMessages();
+    renderCurrentConversation();
+    updateConversationIndicator();
+  } catch (error) {
+    console.error('Error creating new session:', error);
+    alert(`Error creating new session: ${error.message}`);
+  }
+}
+
+function handleSessionSelect(sessionId) {
+  try {
+    const session = loadSession(sessionId);
+    setState(session);
+    renderSessionHistory();
+    renderAgentMessages();
+    renderCurrentConversation();
+    updateConversationIndicator();
+  } catch (error) {
+    console.error('Error loading session:', error);
+    alert(`Error loading session: ${error.message}`);
+  }
+}
+
+function handleDeleteSession(sessionId) {
+  try {
+    const sessions = getAllSessions();
+    const session = sessions.find(s => s.id === sessionId);
+    
+    if (!session) return;
+    
+    if (!showDeleteConfirmation(session.name)) {
+      return;
+    }
+    
+    const nextSession = deleteSession(sessionId);
+    
+    if (nextSession) {
+      setState(nextSession);
+    } else {
+      // No sessions left, create new one
+      const newSession = createNewSession();
+      setState(newSession);
+    }
+    
+    renderSessionHistory();
+    renderAgentMessages();
+    renderCurrentConversation();
+    updateConversationIndicator();
+  } catch (error) {
+    console.error('Error deleting session:', error);
+    alert(`Error deleting session: ${error.message}`);
+  }
 }
 
 // API Key Management
