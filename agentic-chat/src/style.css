@@ -20,16 +20,19 @@ body {
 /* Session History (Left Sidebar) */
 .session-history {
   width: 250px;
+  min-width: 250px;
   display: flex;
   flex-direction: column;
   background: #1e1e1e;
   border-right: 1px solid #333;
-  transition: margin-left 0.3s ease, width 0.3s ease;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
 .session-history.collapsed {
-  margin-left: -250px;
   width: 0;
+  min-width: 0;
+  border-right: none;
   overflow: hidden;
 }
 
@@ -134,19 +137,16 @@ body {
 }
 
 .toggle-sidebar-btn {
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  z-index: 1000;
-  padding: 8px 12px;
+  padding: 6px 10px;
   background: #2d2d2d;
   color: #e0e0e0;
   border: 1px solid #404040;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 16px;
   transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  margin-right: 12px;
+  flex-shrink: 0;
 }
 
 .toggle-sidebar-btn:hover {
@@ -158,11 +158,6 @@ body {
   transform: scale(0.95);
 }
 
-/* Adjust button position when sidebar is open */
-.session-history:not(.collapsed) ~ .main-chat .toggle-sidebar-btn {
-  left: 266px; /* 250px sidebar + 16px padding */
-}
-
 .chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -171,21 +166,25 @@ body {
 
 .message {
   margin-bottom: 16px;
-  padding: 12px;
+  padding: 12px 16px;
   border-radius: 8px;
-  max-width: 80%;
+  max-width: 75%;
+  clear: both;
 }
 
 .message.user {
   background: #0d6efd;
   color: white;
   margin-left: auto;
+  margin-right: 0;
 }
 
 .message.assistant {
   background: #2d2d2d;
   border: 1px solid #404040;
   color: #e0e0e0;
+  margin-right: auto;
+  margin-left: 0;
 }
 
 .message-header {
@@ -520,4 +519,109 @@ body {
   color: #ff6b6b;
   background: #3d1f1f;
   border: 1px solid #5a2a2a;
+}
+
+/* Conversation Tree Navigation */
+.conversation-tree-container {
+  background: #1e1e1e;
+  border-bottom: 1px solid #333;
+  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tree-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #242424;
+  border-bottom: 1px solid #333;
+}
+
+.tree-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e0e0e0;
+  margin: 0;
+}
+
+.tree-indicator {
+  font-size: 12px;
+  color: #888;
+}
+
+.conversation-tree-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.conversation-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tree-node {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: #2d2d2d;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  font-size: 13px;
+}
+
+.tree-node:hover {
+  background: #3d3d3d;
+  border-color: #404040;
+}
+
+.tree-node.active {
+  background: #1e3a5f;
+  border-color: #0d6efd;
+}
+
+.tree-arrow {
+  width: 20px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #888;
+  user-select: none;
+}
+
+.tree-label {
+  flex: 1;
+  color: #e0e0e0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-empty {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-size: 13px;
+}
+
+/* Scrollbar styling for tree */
+.conversation-tree-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.conversation-tree-scroll::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.conversation-tree-scroll::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 3px;
+}
+
+.conversation-tree-scroll::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }

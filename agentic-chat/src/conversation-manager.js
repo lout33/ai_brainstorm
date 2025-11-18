@@ -11,6 +11,7 @@ let agentHistory = [];
 let conversations = [];
 let currentConversationIndex = 0;
 let conversationIdCounter = 1;
+let expandedConversations = []; // Track expanded conversation IDs
 
 // State change notification callback
 let stateChangeCallback = null;
@@ -32,7 +33,8 @@ export function getState() {
   return {
     agentHistory: [...agentHistory],
     conversations: conversations.map(c => ({ ...c, history: [...c.history] })),
-    currentConversationIndex
+    currentConversationIndex,
+    expandedConversations: [...expandedConversations]
   };
 }
 
@@ -43,6 +45,7 @@ export function setState(state) {
   agentHistory = state.agentHistory ? [...state.agentHistory] : [];
   conversations = state.conversations ? state.conversations.map(c => ({ ...c, history: [...c.history] })) : [];
   currentConversationIndex = state.currentConversationIndex || 0;
+  expandedConversations = state.expandedConversations ? [...state.expandedConversations] : [];
   
   // Update conversation ID counter to avoid conflicts
   if (conversations.length > 0) {
@@ -286,11 +289,47 @@ export function findConversation(searchTerm) {
   );
 }
 
+// TREE SUPPORT FUNCTIONS
+
+// Gets root conversations (those without parents)
+export function getRootConversations() {
+  return conversations.filter(conv => conv.parentId === null);
+}
+
+// Gets children of a specific conversation
+export function getConversationChildren(parentId) {
+  return conversations.filter(conv => conv.parentId === parentId);
+}
+
+// Calculates the depth/nesting level of a conversation
+export function getConversationDepth(conversationId) {
+  const conversationMap = new Map(conversations.map(c => [c.id, c]));
+  let depth = 0;
+  let current = conversationMap.get(conversationId);
+  
+  while (current && current.parentId) {
+    depth++;
+    current = conversationMap.get(current.parentId);
+  }
+  
+  return depth;
+}
+
+// Gets expanded conversation IDs
+export function getExpandedConversations() {
+  return [...expandedConversations];
+}
+
+// Sets expanded conversation IDs
+export function setExpandedConversations(expanded) {
+  expandedConversations = [...expanded];
+}
+
 // BRANCHING SUPPORT
 
 // Creates branches from an existing conversation
-// Copies history from parent, then adds new prompts from agent
-export async function branchConversation(parentConversationId, branchCount, prompts) {
+// Copies history from parent, then adds new prompts from agent or user
+export async function branchConversation(parentConversationId, branchCount, prompts, options = {}) {
   const apiKey = loadApiKey();
   if (!apiKey) {
     throw new Error('API key not configured');
@@ -301,6 +340,7 @@ export async function branchConversation(parentConversationId, branchCount, prom
     throw new Error('Parent conversation not found');
   }
 
+  const { source = 'agent', onBranchCreated = null, onStreamChunk = null } = options;
   const newBranches = [];
   
   // Create branch conversations
@@ -319,7 +359,7 @@ export async function branchConversation(parentConversationId, branchCount, prom
           role: 'user',
           content: prompt,
           timestamp: Date.now(),
-          source: 'agent'
+          source: source // Can be 'agent' or 'user'
         }
       ]
     };
@@ -331,8 +371,13 @@ export async function branchConversation(parentConversationId, branchCount, prom
   conversations.push(...newBranches);
   notifyStateChange();
   
-  // Send prompts to all branches in parallel
-  const promises = newBranches.map(async (branch) => {
+  // Notify that branches are created (before responses)
+  if (onBranchCreated) {
+    onBranchCreated(newBranches);
+  }
+  
+  // Send prompts to all branches
+  const promises = newBranches.map(async (branch, index) => {
     try {
       // Prepare messages for API
       const apiMessages = branch.history.map(msg => ({
@@ -340,19 +385,41 @@ export async function branchConversation(parentConversationId, branchCount, prom
         content: msg.content
       }));
       
-      const response = await sendChatCompletion(
-        branch.modelId,
-        apiMessages,
-        apiKey
-      );
+      // Use streaming if callback provided and this is the first branch
+      if (onStreamChunk && index === 0) {
+        let fullContent = '';
+        await sendStreamingChatCompletion(
+          branch.modelId,
+          apiMessages,
+          apiKey,
+          (chunk) => {
+            fullContent += chunk;
+            onStreamChunk(chunk, fullContent, branch);
+          }
+        );
+        
+        const assistantMessage = {
+          role: 'assistant',
+          content: fullContent,
+          timestamp: Date.now()
+        };
+        branch.history.push(assistantMessage);
+      } else {
+        // Non-streaming for other branches
+        const response = await sendChatCompletion(
+          branch.modelId,
+          apiMessages,
+          apiKey
+        );
+        
+        const assistantMessage = {
+          role: 'assistant',
+          content: extractMessageContent(response),
+          timestamp: Date.now()
+        };
+        branch.history.push(assistantMessage);
+      }
       
-      const assistantMessage = {
-        role: 'assistant',
-        content: extractMessageContent(response),
-        timestamp: Date.now()
-      };
-      
-      branch.history.push(assistantMessage);
       notifyStateChange();
     } catch (error) {
       console.error(`Error in branch ${branch.id}:`, error);

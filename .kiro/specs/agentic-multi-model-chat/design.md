@@ -487,7 +487,56 @@ showDeleteConfirmation(sessionId)
 }
 ```
 
-### 7. Chat Interface (`ui-manager.js`)
+### 7. Conversation Tree Navigator (`conversation-tree-ui.js`)
+
+**Purpose**: Manages the hierarchical tree view of conversations with expand/collapse functionality.
+
+**Key Functions**:
+```javascript
+// Builds tree structure from flat conversation list
+buildConversationTree(conversations)
+
+// Renders the conversation tree with indentation and expand/collapse controls
+renderConversationTree(treeData, currentConversationId)
+
+// Toggles expand/collapse state for a conversation
+toggleConversationExpand(conversationId)
+
+// Gets list of visible conversations (respecting collapsed state)
+getVisibleConversations()
+
+// Finds path from root to a conversation (for auto-expand)
+findConversationPath(conversationId)
+
+// Expands all ancestors of a conversation
+expandPathToConversation(conversationId)
+
+// Handles conversation selection from tree
+handleConversationSelect(conversationId)
+```
+
+**Tree Data Structure**:
+```javascript
+{
+  id: string,
+  modelName: string,
+  parentId: string | null,
+  children: TreeNode[], // Child conversations
+  isExpanded: boolean, // Collapse state
+  depth: number, // Indentation level
+  isActive: boolean // Currently selected
+}
+```
+
+**UI Elements**:
+- Expand/collapse arrow (▼ expanded, ▶ collapsed)
+- Indentation based on depth (20px per level)
+- Conversation label: "[depth].[index] [ModelName] - [FirstPrompt]"
+- Active conversation highlighted with background color
+- Click anywhere on row to select conversation
+- Click arrow to toggle expand/collapse only
+
+### 8. Chat Interface (`ui-manager.js`)
 
 **Purpose**: Manages the main chat user interface and user interactions.
 
@@ -499,14 +548,14 @@ renderAgentMessage(message, selectedModels)
 // Renders current model's response in main chat
 renderModelResponse(modelId, message, timestamp)
 
-// Navigates to next model's response
+// Navigates to next visible conversation
 showNextModel()
 
-// Navigates to previous model's response
+// Navigates to previous visible conversation
 showPreviousModel()
 
-// Updates model indicator (e.g., "Model 2 of 3")
-updateModelIndicator(currentIndex, totalModels)
+// Updates model indicator (e.g., "Response 2 of 5 (3 hidden)")
+updateModelIndicator(currentIndex, totalVisible, totalHidden)
 
 // Handles user input from main chat
 handleUserInput(message)
@@ -561,6 +610,39 @@ addUserModel(modelId, modelName, tags)
 7. User clicks ">" to see Conversation 2's joke, then ">" for Conversation 3's joke
 8. User can continue chatting - next message goes to the CURRENT conversation only
 9. User navigates between conversations to compare and find the best responses
+
+**Hierarchical Conversation Tree Navigation**:
+
+Instead of a flat list, conversations are organized in a tree structure:
+
+```
+Conversations:
+▼ 1. Claude Haiku - "Generate a funny joke"     [Active]
+  ▶ 1.1 Branch - "Tell me another similar joke"
+  ▼ 1.2 Branch - "Give me one more joke"
+    ▶ 1.2.1 Branch - "Make it even funnier"
+▶ 2. Gemini Pro - "Generate a funny joke"
+▶ 3. Claude Haiku - "Generate a funny joke"
+```
+
+**Tree Navigation Features**:
+- Root conversations (no parent) shown at top level
+- Branches displayed as indented children under their parent
+- Expand/collapse arrows (▼/▶) for conversations with branches
+- Visual indentation shows hierarchy depth
+- Current conversation highlighted with [Active] indicator
+- Clicking a conversation switches to it and expands its parent if needed
+- Navigation buttons (< >) move through visible conversations only
+- Indicator shows "Response 3 of 7 (2 hidden)" when branches are collapsed
+
+**Example Scenario**:
+1. User creates 3 root conversations
+2. User branches from conversation 1 → creates 2 child conversations (1.1, 1.2)
+3. User branches from 1.2 → creates 1 grandchild (1.2.1)
+4. Tree shows: 3 root + 2 children + 1 grandchild = 6 total conversations
+5. User collapses conversation 1 → hides 1.1, 1.2, 1.2.1
+6. Navigation now shows only 3 visible conversations (roots only)
+7. User clicks on 1.2 → automatically expands conversation 1 to show path
 
 ## Data Models
 

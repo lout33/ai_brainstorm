@@ -235,18 +235,61 @@
     - Log error for debugging
     - _Requirements: 7.4_
 
-- [ ] 15. MVP Testing
-  - [ ] 15.1 Test core workflows manually
+- [x] 15. Implement Hierarchical Conversation Tree Navigation
+  - [x] 15.1 Create conversation-tree-ui.js module
+    - Implement buildConversationTree function to convert flat list to tree structure
+    - Create renderConversationTree function with indentation and expand/collapse UI
+    - Add toggleConversationExpand to manage collapse state
+    - Implement getVisibleConversations to filter based on collapsed parents
+    - Add findConversationPath to get ancestor chain
+    - Implement expandPathToConversation for auto-expand on selection
+    - _Requirements: 8.1, 8.2, 8.3, 8.5_
+
+  - [x] 15.2 Update conversation manager for tree support
+    - Add getConversationChildren function to find child conversations
+    - Add getRootConversations function to get conversations without parents
+    - Implement getConversationDepth to calculate nesting level
+    - Add state for tracking expanded/collapsed conversations
+    - _Requirements: 8.1, 8.2_
+
+  - [x] 15.3 Update main UI to use tree navigation
+    - Replace flat navigation with tree view component
+    - Update conversation indicator to show visible/hidden counts
+    - Modify next/previous buttons to navigate visible conversations only
+    - Add click handlers for tree node selection and expand/collapse
+    - Update CSS for tree indentation and visual hierarchy
+    - _Requirements: 8.2, 8.3, 8.4, 8.5, 8.7_
+
+  - [x] 15.4 Implement auto-expand on navigation
+    - When user navigates to a branch, expand its parent automatically
+    - When agent creates branches, expand parent to show new children
+    - Preserve expand/collapse state in session storage
+    - _Requirements: 8.6_
+
+  - [x] 15.5 Add visual indicators for tree structure
+    - Add expand/collapse arrows (▼/▶) for conversations with children
+    - Implement indentation styling (20px per depth level)
+    - Add visual distinction between root and branch conversations
+    - Highlight active conversation in tree
+    - Show conversation labels with depth numbering (1.1, 1.2.1, etc.)
+    - _Requirements: 8.2, 8.3, 8.5_
+
+- [ ] 16. MVP Testing
+  - [ ] 16.1 Test core workflows manually
     - Test create_conversations with "create 3 jokes"
     - Test navigation between conversations
     - Test direct chat in current conversation
     - Test basic branching
+    - Test tree view shows branches as children
+    - Test expand/collapse functionality
+    - Test navigation with collapsed branches
+    - Test auto-expand when selecting hidden branch
     - Test session creation and switching
     - Test session deletion
     - Test session persistence across page reloads
-    - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 7.2, 7.4, 7.5, 7.6_
+    - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 7.2, 7.4, 7.5, 7.6, 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7_
 
-  - [ ]* 15.2 Add simple README
+  - [ ]* 16.2 Add simple README
     - Basic setup instructions
     - How to add API key
     - Example agent commands

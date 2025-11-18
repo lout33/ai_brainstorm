@@ -19,13 +19,26 @@
 
       <!-- Main Chat (Center) -->
       <div id="main-chat" class="main-chat">
-        <button id="toggle-sidebar-btn" class="toggle-sidebar-btn" title="Toggle Sessions">☰</button>
+        <!-- Conversation Tree Navigation -->
+        <div class="conversation-tree-container">
+          <div class="tree-header">
+            <button id="toggle-sidebar-btn" class="toggle-sidebar-btn" title="Toggle Sessions">☰</button>
+            <h3>Conversations</h3>
+            <span id="tree-indicator" class="tree-indicator">0 conversations</span>
+          </div>
+          <div id="conversation-tree" class="conversation-tree-scroll"></div>
+        </div>
+        
+        <!-- Chat Messages -->
         <div id="chat-messages" class="chat-messages"></div>
-        <div class="chat-navigation">
+        
+        <!-- Legacy Navigation (kept for keyboard shortcuts) -->
+        <div class="chat-navigation" style="display: none;">
           <button id="prev-btn" class="nav-btn">&lt;</button>
           <span id="conversation-indicator" class="conversation-indicator">No conversations</span>
           <button id="next-btn" class="nav-btn">&gt;</button>
         </div>
+        
         <div class="chat-input-container">
           <input type="text" id="chat-input" class="chat-input" placeholder="Type your message..." />
           <button id="send-btn" class="send-btn">Send</button>

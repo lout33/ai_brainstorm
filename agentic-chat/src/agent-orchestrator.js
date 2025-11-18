@@ -8,8 +8,25 @@ import { getAllConversations } from './conversation-manager.js';
 import { getAgentModel } from './agent-model-manager.js';
 
 // Build system prompt for the agent
-function buildAgentSystemPrompt(activeModels, existingConversations) {
+function buildAgentSystemPrompt(activeModels, existingConversations, currentConversation) {
   const modelsList = activeModels.map(m => `- ${m.name} (${m.id})`).join('\n');
+  
+  // Build current conversation context
+  let currentContext = 'No conversation currently selected';
+  if (currentConversation) {
+    const historyText = currentConversation.history.map(msg => {
+      const sender = msg.role === 'user' 
+        ? (msg.source === 'agent' ? 'Agent' : 'User')
+        : currentConversation.modelName;
+      return `    ${sender}: ${msg.content}`;
+    }).join('\n');
+    
+    currentContext = `**CURRENTLY VIEWING:**
+- Conversation ID: ${currentConversation.id}
+- Model: ${currentConversation.modelName}
+- History:
+${historyText}`;
+  }
   
   // Build detailed conversation list with full history
   let conversationsList = 'No existing conversations';
@@ -22,7 +39,8 @@ function buildAgentSystemPrompt(activeModels, existingConversations) {
         return `    ${sender}: ${msg.content}`;
       }).join('\n');
       
-      return `- Conversation ${i + 1}: ${c.modelName} (ID: ${c.id})
+      const isCurrent = currentConversation && c.id === currentConversation.id ? ' [CURRENT]' : '';
+      return `- Conversation ${i + 1}: ${c.modelName} (ID: ${c.id})${isCurrent}
 ${historyText}`;
     }).join('\n\n');
   }
@@ -32,7 +50,12 @@ ${historyText}`;
 ## AVAILABLE ACTIVE MODELS
 ${modelsList}
 
-## EXISTING CONVERSATIONS
+## CURRENT CONVERSATION CONTEXT
+${currentContext}
+
+When the user says "this one", "this joke", "this conversation", or similar, they are referring to the CURRENTLY VIEWING conversation above.
+
+## ALL EXISTING CONVERSATIONS
 ${conversationsList}
 
 ## YOUR ACTIONS
@@ -45,9 +68,11 @@ ${conversationsList}
    
 2. **continue_conversations**: Branch from existing conversation(s)
    - User says: "i like the joke of conversation 1, ask for 2 more similar jokes"
-   - Identify source conversation by ID or model name
+   - User says: "this one is hilarious, make a similar joke" → Use CURRENT conversation
+   - User says: "this is great, give me 3 more like this" → Use CURRENT conversation
+   - Identify source conversation by ID, model name, or "this/current"
    - Create N branches from that conversation
-   - Generate new prompts for each branch
+   - Generate new prompts for each branch based on the conversation's history
    - Original conversation preserved (non-destructive)
    
 3. **chat**: Respond to general questions about the system
@@ -100,7 +125,7 @@ Always return valid JSON only. Be concise and helpful.`;
 }
 
 // Interpret user command
-export async function interpretCommand(userMessage, conversationHistory) {
+export async function interpretCommand(userMessage, conversationHistory, currentConversation = null) {
   const apiKey = loadApiKey();
   if (!apiKey) {
     throw new Error('API key not configured');
@@ -115,7 +140,7 @@ export async function interpretCommand(userMessage, conversationHistory) {
   }
 
   const existingConversations = getAllConversations();
-  const systemPrompt = buildAgentSystemPrompt(activeModels, existingConversations);
+  const systemPrompt = buildAgentSystemPrompt(activeModels, existingConversations, currentConversation);
 
   // Prepare messages for agent
   const messages = [
@@ -163,8 +188,13 @@ function distributeModels(activeModels, count) {
 }
 
 // Find target conversation for branching
-export function findTargetConversation(reference, existingConversations) {
+export function findTargetConversation(reference, existingConversations, currentConversation = null) {
   const term = reference.toLowerCase();
+  
+  // Check if referring to current conversation
+  if (currentConversation && (term === 'current' || term === 'this' || term.includes('this one'))) {
+    return currentConversation;
+  }
   
   // Try to find by ID first
   let found = existingConversations.find(c => c.id === reference);

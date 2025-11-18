@@ -15,10 +15,21 @@ import {
   getTotalConversations,
   getState,
   setState,
-  onStateChange as onConversationStateChange
+  onStateChange as onConversationStateChange,
+  getExpandedConversations,
+  setExpandedConversations
 } from './conversation-manager.js';
 import { interpretCommand, findTargetConversation } from './agent-orchestrator.js';
 import { getAllConversations } from './conversation-manager.js';
+import {
+  buildConversationTree,
+  renderConversationTree,
+  toggleConversationExpand,
+  getVisibleConversations,
+  expandPathToConversation,
+  getExpandState,
+  setExpandState
+} from './conversation-tree-ui.js';
 import {
   createNewSession,
   saveCurrentSession,
@@ -43,6 +54,8 @@ const sendBtn = document.getElementById('send-btn');
 const prevBtn = document.getElementById('prev-btn');
 const nextBtn = document.getElementById('next-btn');
 const conversationIndicator = document.getElementById('conversation-indicator');
+const conversationTreeContainer = document.getElementById('conversation-tree');
+const treeIndicator = document.getElementById('tree-indicator');
 
 const apiKeyInput = document.getElementById('api-key-input');
 const saveApiKeyBtn = document.getElementById('save-api-key-btn');
@@ -85,6 +98,7 @@ function init() {
   renderSessionHistory();
   renderAgentMessages();
   renderCurrentConversation();
+  renderTree();
   updateConversationIndicator();
   
   // Set initial toggle button state
@@ -141,6 +155,7 @@ function handleNewSession() {
     renderSessionHistory();
     renderAgentMessages();
     renderCurrentConversation();
+    renderTree();
     updateConversationIndicator();
   } catch (error) {
     console.error('Error creating new session:', error);
@@ -155,6 +170,7 @@ function handleSessionSelect(sessionId) {
     renderSessionHistory();
     renderAgentMessages();
     renderCurrentConversation();
+    renderTree();
     updateConversationIndicator();
   } catch (error) {
     console.error('Error loading session:', error);
@@ -307,7 +323,8 @@ async function handleAgentSend() {
 
   try {
     const agentHistory = getAgentHistory();
-    const command = await interpretCommand(message, agentHistory.slice(0, -1)); // Exclude loading message
+    const currentConv = getCurrentConversation(); // Get current conversation for context
+    const command = await interpretCommand(message, agentHistory.slice(0, -1), currentConv); // Exclude loading message
 
     // Remove loading message
     getAgentHistory().pop();
@@ -334,6 +351,7 @@ async function handleCreateConversations(command) {
     // Show conversations immediately as they're created
     await createConversations(command.modelIds, command.initialPrompt, (conversations) => {
       renderCurrentConversation();
+      renderTree();
       updateConversationIndicator();
     });
   } catch (error) {
@@ -346,7 +364,8 @@ async function handleCreateConversations(command) {
 async function handleContinueConversations(command) {
   try {
     const allConversations = getAllConversations();
-    const sourceConv = findTargetConversation(command.sourceConversationId, allConversations);
+    const currentConv = getCurrentConversation();
+    const sourceConv = findTargetConversation(command.sourceConversationId, allConversations, currentConv);
     
     if (!sourceConv) {
       addAgentMessage('assistant', 'Could not find the source conversation');
@@ -354,8 +373,20 @@ async function handleContinueConversations(command) {
       return;
     }
 
-    await branchConversation(sourceConv.id, command.branchCount, command.prompts);
+    await branchConversation(sourceConv.id, command.branchCount, command.prompts, {
+      source: 'agent' // Agent-initiated branches
+    });
+    
+    // Auto-expand the parent to show new branches
+    expandPathToConversation(sourceConv.id, getAllConversations());
+    toggleConversationExpand(sourceConv.id); // Ensure parent is expanded
+    
+    // Sync expand state
+    const expandedIds = getExpandState();
+    setExpandedConversations(expandedIds);
+    
     renderCurrentConversation();
+    renderTree();
     updateConversationIndicator();
   } catch (error) {
     console.error('Error branching conversations:', error);
@@ -420,7 +451,7 @@ async function handleSendMessage() {
   chatInput.value = '';
   sendBtn.disabled = true;
 
-  // Add user message to UI
+  // Show user message immediately in current conversation
   const msgDiv = document.createElement('div');
   msgDiv.className = 'message user';
   msgDiv.innerHTML = `
@@ -441,14 +472,40 @@ async function handleSendMessage() {
   chatMessages.scrollTop = chatMessages.scrollHeight;
 
   try {
-    await sendUserMessage(message, (chunk, fullContent) => {
-      // Update content as chunks arrive
-      contentDiv.textContent = fullContent;
-      chatMessages.scrollTop = chatMessages.scrollHeight;
+    // Create a branch from the current conversation with streaming
+    const newBranches = await branchConversation(conversation.id, 1, [message], {
+      source: 'user',
+      onBranchCreated: (branches) => {
+        // Branch created, now waiting for response
+      },
+      onStreamChunk: (chunk, fullContent, branch) => {
+        // Update streaming content
+        contentDiv.textContent = fullContent;
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
     });
     
-    // Final render to ensure everything is up to date
+    // Auto-expand the parent to show new branch
+    expandPathToConversation(conversation.id, getAllConversations());
+    toggleConversationExpand(conversation.id); // Ensure parent is expanded
+    
+    // Sync expand state
+    const expandedIds = getExpandState();
+    setExpandedConversations(expandedIds);
+    
+    // Switch to the new branch (it's the last conversation added)
+    const allConversations = getAllConversations();
+    const newBranchIndex = allConversations.length - 1;
+    
+    // Navigate to the new branch
+    while (getCurrentIndex() !== newBranchIndex) {
+      switchToNextConversation();
+    }
+    
+    // Render everything
     renderCurrentConversation();
+    renderTree();
+    updateConversationIndicator();
   } catch (error) {
     console.error('Error sending message:', error);
     streamingDiv.classList.add('error');
@@ -461,12 +518,14 @@ async function handleSendMessage() {
 function handlePrevConversation() {
   switchToPreviousConversation();
   renderCurrentConversation();
+  renderTree();
   updateConversationIndicator();
 }
 
 function handleNextConversation() {
   switchToNextConversation();
   renderCurrentConversation();
+  renderTree();
   updateConversationIndicator();
 }
 
@@ -482,6 +541,89 @@ function updateConversationIndicator() {
     prevBtn.disabled = false;
     nextBtn.disabled = false;
   }
+}
+
+// Render conversation tree
+function renderTree() {
+  const allConversations = getAllConversations();
+  const currentConv = getCurrentConversation();
+  const currentId = currentConv ? currentConv.id : null;
+  
+  // Sync expand state from conversation manager to tree UI
+  const expandedIds = getExpandedConversations();
+  setExpandState(expandedIds);
+  
+  if (allConversations.length === 0) {
+    conversationTreeContainer.innerHTML = '<div class="tree-empty">No conversations yet. Ask the agent to create some!</div>';
+    treeIndicator.textContent = '0 conversations';
+    return;
+  }
+  
+  // Build tree structure
+  const treeRoots = buildConversationTree(allConversations);
+  const visibleConversations = getVisibleConversations(treeRoots);
+  
+  // Update indicator with current conversation info
+  const hiddenCount = allConversations.length - visibleConversations.length;
+  let indicatorText = '';
+  if (hiddenCount > 0) {
+    indicatorText = `${visibleConversations.length} visible (${hiddenCount} hidden)`;
+  } else {
+    indicatorText = `${allConversations.length} conversation${allConversations.length === 1 ? '' : 's'}`;
+  }
+  
+  // Add current conversation model name
+  if (currentConv) {
+    indicatorText += ` • ${currentConv.modelName}`;
+  }
+  
+  treeIndicator.textContent = indicatorText;
+  
+  // Render tree
+  const treeElement = renderConversationTree(
+    treeRoots,
+    currentId,
+    handleTreeSelect,
+    handleTreeToggle
+  );
+  
+  conversationTreeContainer.innerHTML = '';
+  conversationTreeContainer.appendChild(treeElement);
+}
+
+// Handle tree node selection
+function handleTreeSelect(conversationId) {
+  const allConversations = getAllConversations();
+  const targetIndex = allConversations.findIndex(c => c.id === conversationId);
+  
+  if (targetIndex !== -1) {
+    // Expand path to this conversation if it's hidden
+    expandPathToConversation(conversationId, allConversations);
+    
+    // Switch to this conversation
+    while (getCurrentIndex() !== targetIndex) {
+      if (getCurrentIndex() < targetIndex) {
+        switchToNextConversation();
+      } else {
+        switchToPreviousConversation();
+      }
+    }
+    
+    renderCurrentConversation();
+    renderTree();
+    updateConversationIndicator();
+  }
+}
+
+// Handle tree expand/collapse toggle
+function handleTreeToggle(conversationId) {
+  toggleConversationExpand(conversationId);
+  
+  // Sync expand state back to conversation manager for persistence
+  const expandedIds = getExpandState();
+  setExpandedConversations(expandedIds);
+  
+  renderTree();
 }
 
 // Start the app

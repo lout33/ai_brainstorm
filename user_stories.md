@@ -150,3 +150,14 @@ also ways to clean it, and a new way to create , i mean lets manage the sessions
 ---
 
 lets now think in how to add the branch feature, the idea is to have duplciated bracned but in the ui we show like children, this ways the user dont get overheml 
+
+
+---
+
+now lets improve the ui, like hide and show session is not working well , the converstions get cut on the left, i cannot read it well 
+
+
+---
+
+
+lets improve the ux/ui, like the input messge section, make it standsr like chatgpt.com or claude.com, i mean very smoth
