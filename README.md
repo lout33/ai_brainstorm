@@ -15,7 +15,9 @@ Orchestrate multiple AI models to brainstorm and solve complex problems together
 
 Deploy your own instance to Vercel in minutes:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/YOUR_USERNAME/ai-brainstorm&env=VITE_USE_PROXY&envDescription=Set%20to%20true%20for%20proxy%20mode%20or%20false%20for%20client-side%20mode&envLink=https://github.com/YOUR_USERNAME/ai-brainstorm%23environment-variables)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/lout33/ai_brainstorm&env=VITE_USE_PROXY&envDescription=Set%20to%20true%20for%20proxy%20mode%20or%20false%20for%20client-side%20mode&envLink=https://github.com/lout33/ai_brainstorm%23environment-variables)
+
+**Live Demo**: [https://ai-brainstorm-blue.vercel.app/](https://ai-brainstorm-blue.vercel.app/)
 
 ### Deployment Modes
 
@@ -36,8 +38,8 @@ Deploy your own instance to Vercel in minutes:
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/ai-brainstorm.git
-cd ai-brainstorm
+git clone https://github.com/lout33/ai_brainstorm.git
+cd ai_brainstorm
 
 # Install dependencies
 cd agentic-chat
@@ -202,8 +204,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 💬 Support
 
-- Open an [issue](https://github.com/YOUR_USERNAME/ai-brainstorm/issues) for bug reports
-- Start a [discussion](https://github.com/YOUR_USERNAME/ai-brainstorm/discussions) for questions
+- Open an [issue](https://github.com/lout33/ai_brainstorm/issues) for bug reports
+- Start a [discussion](https://github.com/lout33/ai_brainstorm/discussions) for questions
 - Check existing issues before creating new ones
 
 ## 🗺️ Roadmap
