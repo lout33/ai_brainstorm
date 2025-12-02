@@ -37,7 +37,38 @@
   --warning: #f59e0b;
   --error: #ef4444;
   --info: #06b6d4;
-  
+
+  /* ============================================
+     SOUL COLORS - Wise Laboratory Palette
+     ============================================ */
+
+  /* Wisdom accent - deep amber for insights and synthesis */
+  --accent-wisdom: #d97706;
+  --accent-wisdom-subtle: rgba(217, 119, 6, 0.15);
+  --accent-wisdom-glow: 0 0 20px rgba(217, 119, 6, 0.3);
+
+  /* Discovery accent - soft emerald for breakthroughs and best results */
+  --accent-discovery: #059669;
+  --accent-discovery-subtle: rgba(5, 150, 105, 0.15);
+  --accent-discovery-glow: 0 0 20px rgba(5, 150, 105, 0.3);
+
+  /* Inquiry accent - thoughtful indigo for questions and exploration */
+  --accent-inquiry: #6366f1;
+  --accent-inquiry-subtle: rgba(99, 102, 241, 0.15);
+  --accent-inquiry-glow: 0 0 20px rgba(99, 102, 241, 0.3);
+
+  /* Contemplation - muted tones for thinking states */
+  --contemplation-bg: rgba(99, 102, 241, 0.05);
+  --contemplation-pulse: rgba(99, 102, 241, 0.15);
+
+  /* ============================================
+     CONTEMPLATIVE ANIMATION TIMING
+     ============================================ */
+
+  --duration-contemplate: 2s;
+  --duration-insight: 1.5s;
+  --ease-breathe: cubic-bezier(0.4, 0, 0.6, 1);
+
   /* Message Colors */
   --msg-user-bg: #3b82f6;
   --msg-user-text: #ffffff;

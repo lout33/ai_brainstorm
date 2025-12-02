@@ -2297,3 +2297,262 @@ body.modal-open {
   padding: 0;
   background: transparent;
 }
+
+/* ===========================================
+   SOUL ANIMATIONS - Wise Laboratory
+   =========================================== */
+
+/* Contemplative Breathing Animation */
+@keyframes contemplate {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.01);
+  }
+}
+
+/* Gentle Insight Reveal */
+@keyframes insightReveal {
+  from {
+    box-shadow: var(--accent-wisdom-glow);
+    border-color: var(--accent-wisdom);
+  }
+  to {
+    box-shadow: var(--shadow-sm);
+    border-color: var(--border-subtle);
+  }
+}
+
+/* Discovery Glow for best results */
+@keyframes discoveryGlow {
+  0% {
+    box-shadow: var(--accent-discovery-glow);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(5, 150, 105, 0.4);
+  }
+  100% {
+    box-shadow: var(--accent-discovery-glow);
+  }
+}
+
+/* Inquiry Pulse for inputs */
+@keyframes inquiryPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px var(--accent-inquiry-subtle), var(--shadow-lg);
+  }
+  50% {
+    box-shadow: 0 0 0 6px var(--accent-inquiry-subtle), var(--shadow-lg);
+  }
+}
+
+/* Soft Emergence Animation (replacing hard slide-in) */
+@keyframes softEmerge {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===========================================
+   CONTEMPLATIVE LOADING STATES
+   =========================================== */
+
+/* Agent loading - breathing pulse instead of spinner */
+.agent-message.loading {
+  opacity: 1;
+  background: var(--contemplation-bg);
+  animation: contemplate var(--duration-contemplate) var(--ease-breathe) infinite;
+}
+
+.agent-message.loading::after {
+  /* Replace spinner with subtle glow dot */
+  width: 8px;
+  height: 8px;
+  border: none;
+  background: var(--accent-inquiry);
+  animation: contemplate var(--duration-contemplate) var(--ease-breathe) infinite;
+  opacity: 0.7;
+}
+
+/* Main chat loading messages - contemplative state */
+.message.loading .message-bubble {
+  background: var(--contemplation-bg);
+  border-color: var(--accent-inquiry-subtle);
+}
+
+.message.loading .message-content {
+  animation: contemplate var(--duration-contemplate) var(--ease-breathe) infinite;
+  color: var(--text-secondary);
+}
+
+/* Council loading - staged glow progression */
+.council-spinner {
+  border: none;
+  background: radial-gradient(circle, var(--accent-inquiry) 0%, transparent 70%);
+  animation: contemplate var(--duration-contemplate) var(--ease-breathe) infinite;
+  opacity: 0.8;
+}
+
+/* ===========================================
+   INSIGHT & DISCOVERY EFFECTS
+   =========================================== */
+
+/* New assistant messages get wisdom glow reveal */
+.message.assistant:not(.loading) .message-bubble {
+  animation: insightReveal var(--duration-insight) var(--ease-out);
+}
+
+/* Agent assistant messages - same treatment */
+.agent-message.assistant:not(.loading):not(.council-message) {
+  animation: insightReveal var(--duration-insight) var(--ease-out);
+}
+
+/* Council winner row gets discovery accent */
+.council-winner {
+  background: var(--accent-discovery-subtle);
+  animation: discoveryGlow 3s var(--ease-breathe) infinite;
+}
+
+.council-winner .council-model-name {
+  color: var(--accent-discovery);
+}
+
+/* Council synthesis section gets wisdom accent */
+.council-synthesis-section {
+  background: var(--accent-wisdom-subtle);
+  border-left: 3px solid var(--accent-wisdom);
+}
+
+.council-synthesis-section .council-section-title {
+  color: var(--accent-wisdom);
+}
+
+/* ===========================================
+   INQUIRY FOCUS STATES
+   =========================================== */
+
+/* Main chat input - inquiry glow on focus */
+.chat-input-wrapper:focus-within {
+  border-color: var(--accent-inquiry);
+  box-shadow: 0 0 0 3px var(--accent-inquiry-subtle), var(--shadow-lg);
+  animation: inquiryPulse 2s var(--ease-breathe) infinite;
+}
+
+/* Agent input - inquiry glow on focus */
+.agent-input-container:focus-within {
+  border-color: var(--accent-inquiry);
+  box-shadow: 0 0 0 4px var(--accent-inquiry-subtle), var(--shadow-lg);
+  animation: inquiryPulse 2s var(--ease-breathe) infinite;
+}
+
+/* ===========================================
+   SLOWER, MORE CONTEMPLATIVE ANIMATIONS
+   =========================================== */
+
+/* Message animations - slower and softer */
+.message {
+  animation: softEmerge var(--duration-slower) var(--ease-out);
+}
+
+.agent-message {
+  animation: softEmerge var(--duration-slower) var(--ease-out);
+}
+
+/* Button hovers - subtle glow instead of scale */
+.send-btn:hover:not(:disabled),
+.agent-send-btn:hover:not(:disabled),
+.new-session-btn:hover,
+.modal-btn:hover {
+  box-shadow: var(--accent-inquiry-glow);
+  transform: translateY(-1px);
+}
+
+/* Tree node hover - soft highlight glow */
+.tree-node:hover {
+  background: var(--bg-hover);
+  box-shadow: inset 0 0 0 1px var(--accent-inquiry-subtle);
+  transform: none;
+}
+
+/* Session item hover - inquiry glow */
+.session-item:hover {
+  box-shadow: inset 0 0 0 1px var(--accent-inquiry-subtle);
+  transform: none;
+}
+
+/* ===========================================
+   EMPTY STATE ATMOSPHERE
+   =========================================== */
+
+/* Subtle dot pattern for empty areas */
+.tree-empty,
+.agent-welcome {
+  position: relative;
+}
+
+.tree-empty::before,
+.agent-welcome::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(
+    circle at center,
+    var(--border-subtle) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Empty chat messages area - contemplation space */
+.chat-messages:empty::after {
+  content: '';
+  display: block;
+  height: 100%;
+  background-image: radial-gradient(
+    circle at center,
+    var(--contemplation-pulse) 1px,
+    transparent 1px
+  );
+  background-size: 32px 32px;
+  opacity: 0.2;
+  animation: contemplate 4s var(--ease-breathe) infinite;
+}
+
+/* ===========================================
+   COUNCIL RESULT ENHANCED STYLING
+   =========================================== */
+
+/* Council header with inquiry accent */
+.council-header {
+  background: linear-gradient(
+    135deg,
+    var(--accent-inquiry-subtle),
+    var(--accent-wisdom-subtle)
+  );
+  border-bottom: 1px solid var(--accent-inquiry-subtle);
+}
+
+/* Council section alternating accents */
+.council-section:nth-child(odd) {
+  background: var(--contemplation-bg);
+}
+
+/* Rankings table header */
+.council-rankings-table th,
+.council-aggregate-table th {
+  color: var(--accent-inquiry);
+  border-bottom-color: var(--accent-inquiry-subtle);
+}
