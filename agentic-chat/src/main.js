@@ -51,6 +51,7 @@ import {
   setupScrollSync,
   updateActiveDot
 } from './branch-indicator.js';
+import { initPanelResize } from './panel-resize.js';
 
 // DOM Elements
 const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
@@ -260,6 +261,9 @@ function init() {
   const mainChat = document.querySelector('.main-chat');
   initBranchIndicator(mainChat);
   setupScrollSync(chatMessages);
+
+  // Initialize panel resize functionality
+  initPanelResize();
 
   // Render UI
   renderModalActiveModels();

@@ -24,15 +24,16 @@ body {
 /* Session History (Left Sidebar) */
 .session-history {
   width: 260px;
-  min-width: 260px;
+  min-width: 60px;
+  max-width: 500px;
   display: flex;
   flex-direction: column;
   background: var(--bg-secondary);
   border-right: 1px solid var(--border-subtle);
-  transition: width var(--duration-slow) var(--ease-in-out),
-              opacity var(--duration-normal) var(--ease-out);
+  transition: opacity var(--duration-normal) var(--ease-out);
   flex-shrink: 0;
   overflow: hidden;
+  position: relative;
 }
 
 .session-history.collapsed {
@@ -379,21 +380,104 @@ body {
 /* Agent Chat Panel (Right) */
 .agent-panel {
   width: 350px;
-  min-width: 350px;
+  min-width: 60px;
+  max-width: 600px;
   display: flex;
   flex-direction: column;
   background: var(--bg-secondary);
   border-left: 1px solid var(--border-subtle);
-  transition: width var(--duration-slow) var(--ease-in-out),
-              opacity var(--duration-normal) var(--ease-out);
+  transition: opacity var(--duration-normal) var(--ease-out);
   flex-shrink: 0;
   overflow: hidden;
+  position: relative;
 }
 
 .agent-panel.collapsed {
   width: 0;
   min-width: 0;
   opacity: 0;
+}
+
+/* ===========================================
+   Resize Handles for Sidebars
+   =========================================== */
+.resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: transparent;
+  cursor: col-resize;
+  z-index: 100;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 40px;
+  background: var(--border-subtle);
+  border-radius: var(--radius-full);
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-out),
+              background var(--duration-fast) var(--ease-out);
+}
+
+.resize-handle:hover::after,
+.resize-handle.dragging::after {
+  opacity: 1;
+}
+
+.resize-handle:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.resize-handle:hover::after {
+  background: var(--brand-primary);
+}
+
+.resize-handle.dragging {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.resize-handle.dragging::after {
+  background: var(--brand-primary);
+  opacity: 1;
+}
+
+.resize-handle-right {
+  right: -3px;
+}
+
+.resize-handle-right::after {
+  right: 1px;
+}
+
+.resize-handle-left {
+  left: -3px;
+}
+
+.resize-handle-left::after {
+  left: 1px;
+}
+
+/* Hide resize handles when panel is collapsed */
+.session-history.collapsed .resize-handle,
+.agent-panel.collapsed .resize-handle {
+  display: none;
+}
+
+/* Prevent text selection during resize */
+body.resizing {
+  user-select: none;
+  cursor: col-resize !important;
+}
+
+body.resizing * {
+  cursor: col-resize !important;
 }
 
 .agent-header {
