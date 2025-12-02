@@ -616,14 +616,42 @@ function renderAgentMessages() {
     welcome.className = 'agent-welcome';
     welcome.innerHTML = `
       <div class="agent-welcome-icon">🤖</div>
-      <div class="agent-welcome-title">AI Agent Ready</div>
+      <div class="agent-welcome-title">AI Brainstorm Agent</div>
       <div class="agent-welcome-text">
-        I can help you brainstorm with multiple AI models, compare their responses, and find the best answers.
+        I orchestrate multiple AI models to brainstorm, compare perspectives, and find the best answers through consensus.
       </div>
-      <div class="agent-welcome-suggestions">
-        <button class="agent-welcome-suggestion" data-prompt="Compare responses from different models on a topic">💡 Compare model perspectives</button>
-        <button class="agent-welcome-suggestion" data-prompt="Brainstorm creative ideas using multiple AI models">🧠 Brainstorm with multiple AIs</button>
-        <button class="agent-welcome-suggestion" data-prompt="What can you help me with?">❓ What can you do?</button>
+      <div class="agent-welcome-section">
+        <div class="agent-welcome-section-title">🚀 Quick Start - Full Council Workflow</div>
+        <button class="agent-welcome-suggestion featured" data-prompt="Ask all models: What are the pros and cons of remote work vs office work? Then let me use the Council to find the best answer.">
+          <span class="suggestion-title">Try the AI Council</span>
+          <span class="suggestion-desc">Ask multiple models, then use Council to synthesize the best answer</span>
+        </button>
+      </div>
+      <div class="agent-welcome-section">
+        <div class="agent-welcome-section-title">💬 Example Prompts</div>
+        <button class="agent-welcome-suggestion" data-prompt="Ask all models: What's the best programming language for beginners in 2024?">
+          <span class="suggestion-title">Compare AI opinions</span>
+          <span class="suggestion-desc">Get different perspectives on a topic</span>
+        </button>
+        <button class="agent-welcome-suggestion" data-prompt="Brainstorm 5 creative startup ideas in the AI space">
+          <span class="suggestion-title">Brainstorm ideas</span>
+          <span class="suggestion-desc">Generate creative suggestions with multiple AIs</span>
+        </button>
+        <button class="agent-welcome-suggestion" data-prompt="Explain quantum computing in simple terms">
+          <span class="suggestion-title">Learn a concept</span>
+          <span class="suggestion-desc">Get explanations from different models</span>
+        </button>
+      </div>
+      <div class="agent-welcome-section">
+        <div class="agent-welcome-section-title">📖 How It Works</div>
+        <button class="agent-welcome-suggestion" data-prompt="What can you do? Explain all your features.">
+          <span class="suggestion-title">Show all features</span>
+          <span class="suggestion-desc">Learn what I can help you with</span>
+        </button>
+        <button class="agent-welcome-suggestion" data-prompt="How do I use the Council feature to get consensus from multiple AIs?">
+          <span class="suggestion-title">Council explained</span>
+          <span class="suggestion-desc">Understand the AI consensus feature</span>
+        </button>
       </div>
     `;
 
