@@ -319,8 +319,17 @@ function init() {
   deleteAgentChatBtn.addEventListener('click', handleDeleteAgentChat);
 
   agentSendBtn.addEventListener('click', handleAgentSend);
-  agentInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleAgentSend();
+  agentInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleAgentSend();
+    }
+  });
+
+  // Auto-grow agent textarea
+  agentInput.addEventListener('input', () => {
+    agentInput.style.height = 'auto';
+    agentInput.style.height = Math.min(agentInput.scrollHeight, 200) + 'px';
   });
 
   sendBtn.addEventListener('click', handleSendMessage);
@@ -601,9 +610,41 @@ function renderAgentMessages() {
   const history = getAgentHistory();
   agentMessages.innerHTML = '';
 
-  history.forEach((msg) => {
+  // Show welcome screen when empty
+  if (history.length === 0) {
+    const welcome = document.createElement('div');
+    welcome.className = 'agent-welcome';
+    welcome.innerHTML = `
+      <div class="agent-welcome-icon">🤖</div>
+      <div class="agent-welcome-title">AI Agent Ready</div>
+      <div class="agent-welcome-text">
+        I can help you brainstorm with multiple AI models, compare their responses, and find the best answers.
+      </div>
+      <div class="agent-welcome-suggestions">
+        <button class="agent-welcome-suggestion" data-prompt="Compare responses from different models on a topic">💡 Compare model perspectives</button>
+        <button class="agent-welcome-suggestion" data-prompt="Brainstorm creative ideas using multiple AI models">🧠 Brainstorm with multiple AIs</button>
+        <button class="agent-welcome-suggestion" data-prompt="What can you help me with?">❓ What can you do?</button>
+      </div>
+    `;
+
+    // Add click handlers for suggestions
+    welcome.querySelectorAll('.agent-welcome-suggestion').forEach(btn => {
+      btn.addEventListener('click', () => {
+        agentInput.value = btn.dataset.prompt;
+        agentInput.focus();
+        agentInput.style.height = 'auto';
+        agentInput.style.height = Math.min(agentInput.scrollHeight, 200) + 'px';
+      });
+    });
+
+    agentMessages.appendChild(welcome);
+    return;
+  }
+
+  history.forEach((msg, index) => {
     const msgDiv = document.createElement('div');
     msgDiv.className = `agent-message ${msg.role}`;
+    msgDiv.dataset.messageIndex = index;
 
     // Check if this is a council result message
     if (msg.councilResult) {
@@ -753,6 +794,7 @@ async function handleAgentSend() {
   addAgentMessage('user', message);
   renderAgentMessages();
   agentInput.value = '';
+  agentInput.style.height = 'auto'; // Reset textarea height
 
   // Show loading
   const loadingMsg = addAgentMessage('assistant', 'Thinking...');

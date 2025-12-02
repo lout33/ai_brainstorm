@@ -606,11 +606,14 @@ body.resizing * {
   color: var(--text-primary);
 }
 
+/* ===========================================
+   Agent Chat Section - Primary Interaction
+   =========================================== */
 .agent-chat-section {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: var(--space-4);
+  padding: 0;
   overflow: hidden;
   transition: opacity var(--duration-fast) var(--ease-out);
 }
@@ -619,86 +622,243 @@ body.resizing * {
   opacity: 0;
 }
 
+/* Agent Messages Area */
 .agent-messages {
   flex: 1;
   overflow-y: auto;
-  margin-bottom: var(--space-3);
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-4);
+  scroll-behavior: smooth;
 }
 
+/* Agent Message Bubbles */
 .agent-message {
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
-  font-size: var(--text-xs);
-  line-height: var(--leading-normal);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
   animation: messageSlideIn var(--duration-slow) var(--ease-out);
+  word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .agent-message.user {
-  background: rgba(59, 130, 246, 0.15);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1));
   color: var(--text-primary);
   align-self: flex-end;
-  max-width: 85%;
+  max-width: 90%;
   border-bottom-right-radius: var(--radius-sm);
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .agent-message.assistant {
-  background: var(--bg-tertiary);
+  background: var(--bg-primary);
   color: var(--text-primary);
   align-self: flex-start;
-  max-width: 85%;
+  max-width: 95%;
   border-bottom-left-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Agent message with icon */
+.agent-message.assistant::before {
+  content: '🤖';
+  display: block;
+  font-size: var(--text-xs);
+  margin-bottom: var(--space-1);
+  opacity: 0.7;
+}
+
+.agent-message.user::before {
+  content: 'You';
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--brand-primary);
+  margin-bottom: var(--space-1);
+}
+
+/* Loading state for agent */
+.agent-message.loading {
+  opacity: 0.8;
+}
+
+.agent-message.loading::after {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-left: var(--space-2);
+  border: 2px solid var(--border-default);
+  border-top-color: var(--brand-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Agent Input Wrapper */
+.agent-input-wrapper {
+  padding: var(--space-4);
+  background: linear-gradient(to top, var(--bg-secondary) 0%, var(--bg-secondary) 80%, transparent 100%);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .agent-input-container {
   display: flex;
+  align-items: flex-end;
   gap: var(--space-2);
+  background: var(--bg-primary);
+  border: 2px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  padding: var(--space-2);
+  transition: all var(--duration-normal) var(--ease-out);
+  box-shadow: var(--shadow-md);
+}
+
+.agent-input-container:focus-within {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), var(--shadow-lg);
 }
 
 .agent-input {
   flex: 1;
-  padding: var(--space-2);
-  border: 1px solid var(--border-default);
-  background: var(--bg-tertiary);
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  background: transparent;
   color: var(--text-primary);
-  border-radius: var(--radius-md);
-  font-size: var(--text-xs);
-  transition: all var(--duration-fast) var(--ease-out);
-}
-
-.agent-input:focus {
+  font-size: var(--text-lg);
+  font-family: var(--font-sans);
+  line-height: var(--leading-relaxed);
+  resize: none;
   outline: none;
-  border-color: var(--brand-primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  min-height: 56px;
+  max-height: 200px;
 }
 
 .agent-input::placeholder {
   color: var(--text-tertiary);
+  font-size: var(--text-base);
 }
 
 .agent-send-btn {
-  padding: var(--space-2) var(--space-4);
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--brand-primary);
   color: white;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
   transition: all var(--duration-fast) var(--ease-out);
+  flex-shrink: 0;
 }
 
-.agent-send-btn:hover {
+.agent-send-btn:hover:not(:disabled) {
   background: var(--brand-hover);
-  transform: translateY(-1px);
+  transform: scale(1.05);
   box-shadow: var(--shadow-md);
 }
 
-.agent-send-btn:active {
-  transform: translateY(0);
-  box-shadow: var(--shadow-sm);
+.agent-send-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.agent-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.agent-send-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.agent-input-hint {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: var(--space-2);
+  opacity: 0.7;
+}
+
+/* Agent messages scrollbar */
+.agent-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.agent-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.agent-messages::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--radius-full);
+}
+
+.agent-messages::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+/* Welcome message in empty agent chat */
+.agent-welcome {
+  text-align: center;
+  padding: var(--space-8);
+  color: var(--text-secondary);
+}
+
+.agent-welcome-icon {
+  font-size: 48px;
+  margin-bottom: var(--space-4);
+  opacity: 0.8;
+}
+
+.agent-welcome-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.agent-welcome-text {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+.agent-welcome-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+
+.agent-welcome-suggestion {
+  padding: var(--space-3);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  text-align: left;
+}
+
+.agent-welcome-suggestion:hover {
+  background: var(--bg-hover);
+  border-color: var(--brand-primary);
+  color: var(--text-primary);
+  transform: translateX(4px);
 }
 
 .loading {

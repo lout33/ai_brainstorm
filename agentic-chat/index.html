@@ -78,9 +78,17 @@
           <div id="agent-messages" class="agent-messages"></div>
           <!-- Suggestions section for council and other actions -->
           <div id="agent-suggestions" class="agent-suggestions"></div>
-          <div class="agent-input-container">
-            <input type="text" id="agent-input" class="agent-input" placeholder="Ask agent..." />
-            <button id="agent-send-btn" class="agent-send-btn">Send</button>
+          <div class="agent-input-wrapper">
+            <div class="agent-input-container">
+              <textarea id="agent-input" class="agent-input" placeholder="Ask the agent to brainstorm, compare models, or analyze responses..." rows="1"></textarea>
+              <button id="agent-send-btn" class="agent-send-btn" title="Send message">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </button>
+            </div>
+            <div class="agent-input-hint">Press Enter to send, Shift+Enter for new line</div>
           </div>
         </div>
       </div>
