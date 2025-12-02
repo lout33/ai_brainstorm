@@ -162,7 +162,8 @@ export async function interpretCommand(userMessage, conversationHistory, current
     );
 
     const content = extractMessageContent(response);
-    const commandJson = JSON.parse(content);
+    const cleanedContent = cleanJsonResponse(content);
+    const commandJson = JSON.parse(cleanedContent);
 
     // Process the command based on action
     if (commandJson.action === 'create_conversations') {
@@ -185,6 +186,29 @@ function distributeModels(activeModels, count) {
     distributed.push(activeModels[i % activeModels.length]);
   }
   return distributed;
+}
+
+// Clean JSON response by removing markdown code blocks
+function cleanJsonResponse(content) {
+  if (!content) return content;
+
+  let cleaned = content.trim();
+
+  // Remove markdown code blocks (```json ... ``` or ``` ... ```)
+  if (cleaned.startsWith('```')) {
+    // Find the end of the first line (might be ```json or just ```)
+    const firstNewline = cleaned.indexOf('\n');
+    if (firstNewline !== -1) {
+      cleaned = cleaned.substring(firstNewline + 1);
+    }
+    // Remove trailing ```
+    if (cleaned.endsWith('```')) {
+      cleaned = cleaned.substring(0, cleaned.length - 3);
+    }
+    cleaned = cleaned.trim();
+  }
+
+  return cleaned;
 }
 
 // Find target conversation for branching

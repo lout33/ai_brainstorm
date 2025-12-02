@@ -17,10 +17,13 @@ import {
   setState,
   onStateChange as onConversationStateChange,
   getExpandedConversations,
-  setExpandedConversations
+  setExpandedConversations,
+  getRootConversations
 } from './conversation-manager.js';
 import { interpretCommand, findTargetConversation } from './agent-orchestrator.js';
 import { getAllConversations } from './conversation-manager.js';
+import { runCouncil } from './council.js';
+import { renderCouncilMessage, renderCouncilLoading, renderCouncilError } from './council-message.js';
 import {
   buildConversationTree,
   renderConversationTree,
@@ -81,6 +84,7 @@ const modalAddModelBtn = document.getElementById('modal-add-model-btn');
 const agentMessages = document.getElementById('agent-messages');
 const agentInput = document.getElementById('agent-input');
 const agentSendBtn = document.getElementById('agent-send-btn');
+const agentSuggestions = document.getElementById('agent-suggestions');
 
 // Settings Modal Functions
 function openSettingsModal() {
@@ -261,6 +265,7 @@ function init() {
   renderModalActiveModels();
   renderSessionHistory();
   renderAgentMessages();
+  renderAgentSuggestions();
   renderCurrentConversation();
   renderTree();
   updateConversationIndicator();
@@ -359,6 +364,7 @@ function handleNewSession() {
     setState(newSession);
     renderSessionHistory();
     renderAgentMessages();
+    renderAgentSuggestions();
     renderCurrentConversation();
     renderTree();
     updateConversationIndicator();
@@ -374,6 +380,7 @@ function handleSessionSelect(sessionId) {
     setState(session);
     renderSessionHistory();
     renderAgentMessages();
+    renderAgentSuggestions();
     renderCurrentConversation();
     renderTree();
     updateConversationIndicator();
@@ -421,14 +428,143 @@ function renderAgentMessages() {
   const history = getAgentHistory();
   agentMessages.innerHTML = '';
 
-  history.forEach(msg => {
+  history.forEach((msg) => {
     const msgDiv = document.createElement('div');
     msgDiv.className = `agent-message ${msg.role}`;
-    msgDiv.textContent = msg.content;
+
+    // Check if this is a council result message
+    if (msg.councilResult) {
+      msgDiv.classList.add('council-message');
+      try {
+        msgDiv.innerHTML = renderCouncilMessage(msg.councilResult);
+      } catch (e) {
+        console.error('Error rendering council message:', e);
+        msgDiv.textContent = 'Error displaying council results';
+      }
+    } else if (msg.councilLoading) {
+      msgDiv.innerHTML = renderCouncilLoading(msg.councilLoading);
+    } else if (msg.councilError) {
+      msgDiv.innerHTML = renderCouncilError(msg.councilError);
+    } else {
+      msgDiv.textContent = msg.content || '';
+    }
+
     agentMessages.appendChild(msgDiv);
   });
 
   agentMessages.scrollTop = agentMessages.scrollHeight;
+}
+
+// Agent Suggestions (Council button, etc.)
+function renderAgentSuggestions() {
+  if (!agentSuggestions) {
+    console.error('agentSuggestions element not found');
+    return;
+  }
+
+  const roots = getRootConversations();
+
+  // Count responses that have completed (have assistant response)
+  const completedResponses = roots.filter(c =>
+    c.history.some(m => m.role === 'assistant' && !m.content.startsWith('Error:'))
+  );
+
+  // Show council button only when 2+ completed responses exist
+  if (completedResponses.length >= 2) {
+    agentSuggestions.innerHTML = `
+      <div class="suggestions-label">Suggestions:</div>
+      <button id="council-btn" class="suggestion-btn">
+        <span class="suggestion-icon">🏛️</span>
+        <span class="suggestion-text">Consult Council</span>
+      </button>
+    `;
+    const councilBtn = document.getElementById('council-btn');
+    if (councilBtn) {
+      councilBtn.addEventListener('click', handleConsultCouncil);
+    }
+  } else {
+    agentSuggestions.innerHTML = '';
+  }
+}
+
+// Council Handler
+async function handleConsultCouncil() {
+  if (!hasApiKey()) {
+    alert('Please configure your API key first');
+    return;
+  }
+
+  const apiKey = loadApiKey();
+  const roots = getRootConversations();
+
+  // Get the original user query from the first conversation
+  const userQuery = roots[0]?.history.find(m => m.role === 'user')?.content || '';
+
+  // Gather responses from root conversations
+  const responses = roots.map(c => ({
+    modelId: c.modelId,
+    modelName: c.modelName,
+    content: c.history.find(m => m.role === 'assistant')?.content
+  })).filter(r => r.content && !r.content.startsWith('Error:'));
+
+  if (responses.length < 2) {
+    alert('Need at least 2 completed responses to consult the council');
+    return;
+  }
+
+  // Hide suggestions while processing
+  agentSuggestions.innerHTML = '';
+
+  // Show initial status
+  addAgentMessage('assistant', `🏛️ Consulting the Council with ${responses.length} responses...`);
+  renderAgentMessages();
+
+  try {
+    // Import council functions dynamically to show progress
+    const { collectRankings, synthesizeFinal, calculateAggregateRankings } = await import('./council.js');
+
+    // Stage 2: Collect rankings
+    updateLastAgentMessage('🏛️ Stage 1/2: Collecting peer rankings...');
+    renderAgentMessages();
+
+    const { rankings, labelToModel } = await collectRankings(userQuery, responses, apiKey);
+    const aggregateRankings = calculateAggregateRankings(rankings, labelToModel);
+
+    // Stage 3: Synthesis
+    updateLastAgentMessage('🏛️ Stage 2/2: Chairman synthesizing final answer...');
+    renderAgentMessages();
+
+    const synthesis = await synthesizeFinal(userQuery, responses, rankings, responses[0].modelId, apiKey);
+
+    // Build result object
+    const result = { rankings, labelToModel, aggregateRankings, synthesis };
+
+    // Add council result as a new agent message
+    const councilResultMsg = addAgentMessage('assistant', '');
+    councilResultMsg.councilResult = result;
+
+    renderAgentMessages();
+    renderAgentSuggestions();
+
+  } catch (error) {
+    console.error('Council error:', error);
+
+    // Remove status message and add error
+    const history = getAgentHistory();
+    history.pop();
+
+    addAgentMessage('assistant', `❌ Council Error: ${error.message}`);
+    renderAgentMessages();
+    renderAgentSuggestions();
+  }
+}
+
+// Helper to update the last agent message
+function updateLastAgentMessage(content) {
+  const history = getAgentHistory();
+  if (history.length > 0) {
+    history[history.length - 1].content = content;
+  }
 }
 
 async function handleAgentSend() {
@@ -481,6 +617,7 @@ async function handleCreateConversations(command) {
       renderCurrentConversation();
       renderTree();
       updateConversationIndicator();
+      renderAgentSuggestions(); // Update suggestions when responses come in
     });
   } catch (error) {
     console.error('Error creating conversations:', error);

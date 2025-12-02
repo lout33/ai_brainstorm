@@ -6,6 +6,7 @@ Orchestrate multiple AI models to brainstorm and solve complex problems together
 
 - **Multi-Model Orchestration**: Coordinate multiple AI models to solve complex problems
 - **Tree-Based Conversations**: Branch and explore different conversation paths
+- **Council Mode**: Have models rank each other's responses and synthesize the best answer
 - **Agent System**: Specialized agents (Planner, Researcher, Coder, Critic) work together
 - **Model Flexibility**: Access 200+ models through OpenRouter's unified API
 - **Two Deployment Modes**: Client-side (bring your own key) or Proxy (managed instance)
@@ -149,6 +150,8 @@ ai-brainstorm/
 │   │   ├── openrouter-client.js  # API client
 │   │   ├── agent-orchestrator.js # Agent coordination
 │   │   ├── conversation-manager.js # Conversation state
+│   │   ├── council.js     # Council mode logic (rankings & synthesis)
+│   │   ├── council-message.js # Council results renderer
 │   │   └── ...
 │   ├── index.html
 │   ├── package.json
@@ -210,6 +213,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🗺️ Roadmap
 
+- [x] Council Mode - Models rank and synthesize best answers
 - [ ] Add more AI providers
 - [ ] Implement conversation export/import
 - [ ] Add collaborative features
