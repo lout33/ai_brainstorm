@@ -112,7 +112,7 @@ export function addAgentMessage(role, content) {
 
 export function getAgentHistory() {
   ensureAgentChat();
-  return [...agentChats[currentAgentChatIndex].history];
+  return agentChats[currentAgentChatIndex].history;
 }
 
 // Get all agent chats

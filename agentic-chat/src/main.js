@@ -2,6 +2,7 @@ import './style.css';
 import { loadApiKey, saveApiKey, hasApiKey } from './api-key-manager.js';
 import { getActiveModels, addActiveModel, removeActiveModel, loadPreset, getCurrentPreset } from './active-models.js';
 import { loadAgentModel, saveAgentModel } from './agent-model-manager.js';
+import { parseMarkdown } from './markdown.js';
 import {
   addAgentMessage,
   getAgentHistory,
@@ -247,7 +248,11 @@ function handleModalRemoveModel(modelId) {
 function init() {
   // Setup session manager callbacks
   onSessionStateChange(() => getState());
-  onConversationStateChange(() => autoSave());
+  onConversationStateChange(() => {
+    autoSave();
+    renderCurrentConversation();
+    renderTree();
+  });
   
   // Restore most recent session
   const session = restoreMostRecentSession();
@@ -688,7 +693,12 @@ function renderAgentMessages() {
     } else if (msg.councilError) {
       msgDiv.innerHTML = renderCouncilError(msg.councilError);
     } else {
-      msgDiv.textContent = msg.content || '';
+      // Render markdown for assistant messages, plain text for user
+      if (msg.role === 'assistant') {
+        msgDiv.innerHTML = `<div class="md-content">${parseMarkdown(msg.content || '')}</div>`;
+      } else {
+        msgDiv.textContent = msg.content || '';
+      }
     }
 
     agentMessages.appendChild(msgDiv);
@@ -954,7 +964,13 @@ function renderCurrentConversation() {
 
     const content = document.createElement('div');
     content.className = 'message-content';
-    content.textContent = msg.content;
+    // Render markdown for assistant messages
+    if (msg.role === 'assistant') {
+      content.innerHTML = parseMarkdown(msg.content);
+      content.classList.add('md-content');
+    } else {
+      content.textContent = msg.content;
+    }
 
     bubble.appendChild(header);
     bubble.appendChild(content);
@@ -962,8 +978,9 @@ function renderCurrentConversation() {
     chatMessages.appendChild(msgDiv);
   });
 
-  // If conversation only has user message (waiting for response), show loading
-  if (conversation.history.length === 1 && conversation.history[0].role === 'user') {
+  // If last message is from user (waiting for response), show loading
+  const lastMsg = conversation.history[conversation.history.length - 1];
+  if (lastMsg && lastMsg.role === 'user') {
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'message assistant loading';
     const bubble = document.createElement('div');
