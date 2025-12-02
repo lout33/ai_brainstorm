@@ -18,7 +18,12 @@ import {
   onStateChange as onConversationStateChange,
   getExpandedConversations,
   setExpandedConversations,
-  getRootConversations
+  getRootConversations,
+  getAllAgentChats,
+  getCurrentAgentChat,
+  createNewAgentChat,
+  switchAgentChat,
+  deleteAgentChat
 } from './conversation-manager.js';
 import { interpretCommand, findTargetConversation } from './agent-orchestrator.js';
 import { getAllConversations } from './conversation-manager.js';
@@ -68,6 +73,9 @@ const nextBtn = document.getElementById('next-btn');
 const conversationIndicator = document.getElementById('conversation-indicator');
 const conversationTreeContainer = document.getElementById('conversation-tree');
 const treeIndicator = document.getElementById('tree-indicator');
+const treeContainer = document.getElementById('conversation-tree-container');
+const treeHeaderCenter = document.getElementById('tree-header-center');
+const treeResizeHandle = document.getElementById('tree-resize-handle');
 
 // Settings Modal Elements
 const settingsBtn = document.getElementById('settings-btn');
@@ -86,6 +94,9 @@ const agentMessages = document.getElementById('agent-messages');
 const agentInput = document.getElementById('agent-input');
 const agentSendBtn = document.getElementById('agent-send-btn');
 const agentSuggestions = document.getElementById('agent-suggestions');
+const agentChatSelect = document.getElementById('agent-chat-select');
+const newAgentChatBtn = document.getElementById('new-agent-chat-btn');
+const deleteAgentChatBtn = document.getElementById('delete-agent-chat-btn');
 
 // Settings Modal Functions
 function openSettingsModal() {
@@ -265,9 +276,14 @@ function init() {
   // Initialize panel resize functionality
   initPanelResize();
 
+  // Initialize tree resize and collapse
+  initTreeResize();
+  treeHeaderCenter.addEventListener('click', handleToggleTreeCollapse);
+
   // Render UI
   renderModalActiveModels();
   renderSessionHistory();
+  renderAgentChatSelector();
   renderAgentMessages();
   renderAgentSuggestions();
   renderCurrentConversation();
@@ -297,6 +313,11 @@ function init() {
   modalPresetSelect.addEventListener('change', handleModalPresetChange);
   modalAddModelBtn.addEventListener('click', handleModalAddModel);
   
+  // Agent chat management
+  newAgentChatBtn.addEventListener('click', handleNewAgentChat);
+  agentChatSelect.addEventListener('change', handleAgentChatChange);
+  deleteAgentChatBtn.addEventListener('click', handleDeleteAgentChat);
+
   agentSendBtn.addEventListener('click', handleAgentSend);
   agentInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleAgentSend();
@@ -355,6 +376,90 @@ function updateAgentPanelToggleButton() {
   }
 }
 
+// Conversation Tree Collapse/Expand
+function handleToggleTreeCollapse() {
+  treeContainer.classList.toggle('collapsed');
+  saveTreeCollapseState();
+}
+
+function saveTreeCollapseState() {
+  const isCollapsed = treeContainer.classList.contains('collapsed');
+  localStorage.setItem('tree-collapsed', isCollapsed ? 'true' : 'false');
+}
+
+function loadTreeCollapseState() {
+  const saved = localStorage.getItem('tree-collapsed');
+  if (saved === 'true') {
+    treeContainer.classList.add('collapsed');
+  }
+}
+
+// Tree Resize
+let isResizingTree = false;
+let treeStartY = 0;
+let treeStartHeight = 0;
+
+function initTreeResize() {
+  // Load saved height
+  const savedHeight = localStorage.getItem('tree-height');
+  if (savedHeight) {
+    treeContainer.style.maxHeight = savedHeight;
+  }
+
+  // Load collapse state
+  loadTreeCollapseState();
+
+  treeResizeHandle.addEventListener('mousedown', startTreeResize);
+  treeResizeHandle.addEventListener('touchstart', startTreeResizeTouch, { passive: false });
+  document.addEventListener('mousemove', doTreeResize);
+  document.addEventListener('mouseup', stopTreeResize);
+  document.addEventListener('touchmove', doTreeResizeTouch, { passive: false });
+  document.addEventListener('touchend', stopTreeResize);
+}
+
+function startTreeResize(e) {
+  if (treeContainer.classList.contains('collapsed')) return;
+  e.preventDefault();
+  isResizingTree = true;
+  treeStartY = e.clientY;
+  treeStartHeight = treeContainer.offsetHeight;
+  document.body.style.cursor = 'row-resize';
+  document.body.style.userSelect = 'none';
+}
+
+function startTreeResizeTouch(e) {
+  if (treeContainer.classList.contains('collapsed')) return;
+  e.preventDefault();
+  isResizingTree = true;
+  treeStartY = e.touches[0].clientY;
+  treeStartHeight = treeContainer.offsetHeight;
+}
+
+function doTreeResize(e) {
+  if (!isResizingTree) return;
+  e.preventDefault();
+  const deltaY = e.clientY - treeStartY;
+  const newHeight = Math.max(100, Math.min(window.innerHeight * 0.7, treeStartHeight + deltaY));
+  treeContainer.style.maxHeight = `${newHeight}px`;
+}
+
+function doTreeResizeTouch(e) {
+  if (!isResizingTree) return;
+  e.preventDefault();
+  const deltaY = e.touches[0].clientY - treeStartY;
+  const newHeight = Math.max(100, Math.min(window.innerHeight * 0.7, treeStartHeight + deltaY));
+  treeContainer.style.maxHeight = `${newHeight}px`;
+}
+
+function stopTreeResize() {
+  if (!isResizingTree) return;
+  isResizingTree = false;
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+  // Save the new height
+  localStorage.setItem('tree-height', treeContainer.style.maxHeight);
+}
+
 // Session Management
 function renderSessionHistory() {
   const sessions = getAllSessions();
@@ -367,6 +472,7 @@ function handleNewSession() {
     const newSession = createNewSession();
     setState(newSession);
     renderSessionHistory();
+    renderAgentChatSelector();
     renderAgentMessages();
     renderAgentSuggestions();
     renderCurrentConversation();
@@ -383,6 +489,7 @@ function handleSessionSelect(sessionId) {
     const session = loadSession(sessionId);
     setState(session);
     renderSessionHistory();
+    renderAgentChatSelector();
     renderAgentMessages();
     renderAgentSuggestions();
     renderCurrentConversation();
@@ -398,15 +505,15 @@ function handleDeleteSession(sessionId) {
   try {
     const sessions = getAllSessions();
     const session = sessions.find(s => s.id === sessionId);
-    
+
     if (!session) return;
-    
+
     if (!showDeleteConfirmation(session.name)) {
       return;
     }
-    
+
     const nextSession = deleteSession(sessionId);
-    
+
     if (nextSession) {
       setState(nextSession);
     } else {
@@ -414,10 +521,13 @@ function handleDeleteSession(sessionId) {
       const newSession = createNewSession();
       setState(newSession);
     }
-    
+
     renderSessionHistory();
+    renderAgentChatSelector();
     renderAgentMessages();
+    renderAgentSuggestions();
     renderCurrentConversation();
+    renderTree();
     updateConversationIndicator();
   } catch (error) {
     console.error('Error deleting session:', error);
@@ -426,6 +536,65 @@ function handleDeleteSession(sessionId) {
 }
 
 
+
+// Agent Chat Selector
+function renderAgentChatSelector() {
+  const chats = getAllAgentChats();
+  const currentChat = getCurrentAgentChat();
+
+  agentChatSelect.innerHTML = '';
+
+  chats.forEach(chat => {
+    const option = document.createElement('option');
+    option.value = chat.id;
+    option.textContent = chat.name + (chat.messageCount > 0 ? ` (${chat.messageCount})` : '');
+    if (currentChat && chat.id === currentChat.id) {
+      option.selected = true;
+    }
+    agentChatSelect.appendChild(option);
+  });
+}
+
+function handleNewAgentChat() {
+  createNewAgentChat();
+  renderAgentChatSelector();
+  renderAgentMessages();
+  renderAgentSuggestions();
+}
+
+function handleAgentChatChange() {
+  const selectedId = agentChatSelect.value;
+  if (selectedId) {
+    switchAgentChat(selectedId);
+    renderAgentMessages();
+    renderAgentSuggestions();
+  }
+}
+
+function handleDeleteAgentChat() {
+  const currentChat = getCurrentAgentChat();
+  if (!currentChat) return;
+
+  const chats = getAllAgentChats();
+
+  if (chats.length <= 1) {
+    // Only one chat, confirm clearing it
+    if (confirm('Clear the current agent chat?')) {
+      deleteAgentChat(currentChat.id);
+      renderAgentChatSelector();
+      renderAgentMessages();
+      renderAgentSuggestions();
+    }
+  } else {
+    // Multiple chats, confirm deletion
+    if (confirm(`Delete "${currentChat.name}"?`)) {
+      deleteAgentChat(currentChat.id);
+      renderAgentChatSelector();
+      renderAgentMessages();
+      renderAgentSuggestions();
+    }
+  }
+}
 
 // Agent Chat
 function renderAgentMessages() {

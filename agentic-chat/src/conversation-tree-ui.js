@@ -153,9 +153,42 @@ function getFirstPrompt(conversation) {
   if (firstUserMsg) {
     // Truncate long prompts
     const prompt = firstUserMsg.content;
-    return prompt.length > 40 ? prompt.substring(0, 40) + '...' : prompt;
+    return prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt;
   }
   return 'New conversation';
+}
+
+/**
+ * Gets the model provider class for color coding
+ * @param {string} modelId - Model ID string
+ * @returns {string} Provider class name
+ */
+function getModelProviderClass(modelId) {
+  const id = modelId.toLowerCase();
+  if (id.includes('openai') || id.includes('gpt')) return 'openai';
+  if (id.includes('anthropic') || id.includes('claude')) return 'anthropic';
+  if (id.includes('google') || id.includes('gemini')) return 'google';
+  if (id.includes('x-ai') || id.includes('grok')) return 'xai';
+  if (id.includes('meta') || id.includes('llama')) return 'meta';
+  return '';
+}
+
+/**
+ * Gets a short model name for display
+ * @param {string} modelName - Full model name
+ * @returns {string} Short model name
+ */
+function getShortModelName(modelName) {
+  // Common abbreviations
+  const name = modelName
+    .replace('Claude ', '')
+    .replace('GPT-', 'GPT')
+    .replace('Gemini ', 'Gem ')
+    .replace('Grok ', 'Grok')
+    .replace(' Pro', '')
+    .replace(' Flash', ' F')
+    .replace(' Thinking', ' T');
+  return name.length > 12 ? name.substring(0, 10) + '..' : name;
 }
 
 /**
@@ -169,16 +202,16 @@ function getFirstPrompt(conversation) {
 export function renderConversationTree(treeRoots, currentConversationId, onSelect, onToggle) {
   const container = document.createElement('div');
   container.className = 'conversation-tree';
-  
+
   function renderNode(node) {
     const nodeEl = document.createElement('div');
     nodeEl.className = 'tree-node';
-    nodeEl.style.paddingLeft = `${node.depth * 20}px`;
-    
+    nodeEl.style.paddingLeft = `${12 + node.depth * 16}px`;
+
     if (node.id === currentConversationId) {
       nodeEl.classList.add('active');
     }
-    
+
     // Expand/collapse arrow (only if has children)
     const arrow = document.createElement('span');
     arrow.className = 'tree-arrow';
@@ -190,34 +223,67 @@ export function renderConversationTree(treeRoots, currentConversationId, onSelec
         onToggle(node.id);
       });
     } else {
-      arrow.textContent = '  '; // Placeholder for alignment
+      arrow.innerHTML = '&nbsp;';
       arrow.style.visibility = 'hidden';
     }
-    
+
+    // Model badge with color
+    const badge = document.createElement('span');
+    badge.className = 'tree-model-badge';
+    const providerClass = getModelProviderClass(node.modelId);
+    if (providerClass) {
+      badge.classList.add(providerClass);
+    }
+    badge.textContent = getShortModelName(node.modelName);
+    badge.title = node.modelName;
+
     // Conversation label
     const label = document.createElement('span');
     label.className = 'tree-label';
     const numberLabel = getConversationLabel(node, treeRoots);
     const prompt = getFirstPrompt(node);
-    label.textContent = `${numberLabel}. ${node.modelName} - "${prompt}"`;
-    
+
+    const numberSpan = document.createElement('span');
+    numberSpan.className = 'tree-label-number';
+    numberSpan.textContent = `${numberLabel}.`;
+
+    const promptSpan = document.createElement('span');
+    promptSpan.className = 'tree-label-prompt';
+    promptSpan.textContent = prompt;
+
+    label.appendChild(numberSpan);
+    label.appendChild(promptSpan);
+
+    // Branch count indicator (if has children)
+    let branchCount = null;
+    if (node.children.length > 0) {
+      branchCount = document.createElement('span');
+      branchCount.className = 'tree-branch-count';
+      branchCount.textContent = `${node.children.length}`;
+      branchCount.title = `${node.children.length} branch${node.children.length > 1 ? 'es' : ''}`;
+    }
+
     // Click handler for selection
     nodeEl.addEventListener('click', () => {
       onSelect(node.id);
     });
-    
+
     nodeEl.appendChild(arrow);
+    nodeEl.appendChild(badge);
     nodeEl.appendChild(label);
+    if (branchCount) {
+      nodeEl.appendChild(branchCount);
+    }
     container.appendChild(nodeEl);
-    
+
     // Render children if expanded
     if (node.isExpanded && node.children.length > 0) {
       node.children.forEach(child => renderNode(child));
     }
   }
-  
+
   treeRoots.forEach(root => renderNode(root));
-  
+
   return container;
 }
 

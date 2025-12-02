@@ -22,19 +22,23 @@
       <!-- Main Chat (Center) -->
       <div id="main-chat" class="main-chat">
         <!-- Conversation Tree Navigation -->
-        <div class="conversation-tree-container">
+        <div id="conversation-tree-container" class="conversation-tree-container">
           <div class="tree-header">
             <div class="tree-header-left">
               <button id="toggle-sidebar-btn" class="toggle-sidebar-btn" title="Toggle Sessions">☰</button>
               <button id="settings-btn" class="settings-btn" title="Settings">⚙</button>
             </div>
-            <h3>Conversations</h3>
+            <div id="tree-header-center" class="tree-header-center" title="Click to collapse/expand">
+              <span id="tree-collapse-icon" class="tree-collapse-icon">▼</span>
+              <h3>Conversations</h3>
+            </div>
             <div class="tree-header-right">
               <span id="tree-indicator" class="tree-indicator">0 conversations</span>
               <button id="toggle-agent-panel-btn" class="toggle-agent-panel-btn" title="Toggle Agent Chat">💬</button>
             </div>
           </div>
           <div id="conversation-tree" class="conversation-tree-scroll"></div>
+          <div id="tree-resize-handle" class="tree-resize-handle"></div>
         </div>
         
         <!-- Chat Messages -->
@@ -59,7 +63,15 @@
       <div id="agent-panel" class="agent-panel">
         <div class="resize-handle resize-handle-left" data-panel="agent-panel"></div>
         <div class="agent-header">
-          <h2>Agent Chat</h2>
+          <div class="agent-header-top">
+            <div class="agent-chat-selector">
+              <select id="agent-chat-select" class="agent-chat-select">
+                <!-- Populated dynamically -->
+              </select>
+              <button id="new-agent-chat-btn" class="new-agent-chat-btn" title="New Agent Chat">+</button>
+            </div>
+            <button id="delete-agent-chat-btn" class="delete-agent-chat-btn" title="Delete Chat">🗑</button>
+          </div>
         </div>
 
         <div class="agent-chat-section">

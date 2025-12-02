@@ -241,6 +241,23 @@ body {
   box-shadow: var(--shadow-md);
 }
 
+/* Highlight animation when message is clicked from branch indicator */
+.message.highlight .message-bubble {
+  animation: messageHighlight 1s var(--ease-out);
+}
+
+@keyframes messageHighlight {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.2);
+  }
+  100% {
+    box-shadow: var(--shadow-sm);
+  }
+}
+
 .message-header {
   font-size: var(--text-xs);
   color: var(--text-tertiary);
@@ -481,9 +498,106 @@ body.resizing * {
 }
 
 .agent-header {
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-primary);
+}
+
+.agent-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.agent-chat-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.agent-chat-select {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 28px;
+}
+
+.agent-chat-select:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--brand-primary);
+}
+
+.agent-chat-select:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.new-agent-chat-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--brand-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  flex-shrink: 0;
+}
+
+.new-agent-chat-btn:hover {
+  background: var(--brand-hover);
+  transform: scale(1.05);
+}
+
+.new-agent-chat-btn:active {
+  transform: scale(0.95);
+}
+
+.delete-agent-chat-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  flex-shrink: 0;
+}
+
+.delete-agent-chat-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.delete-agent-chat-btn:active {
+  transform: scale(0.95);
 }
 
 .agent-header h2 {
@@ -600,20 +714,34 @@ body.resizing * {
 
 /* Conversation Tree Navigation */
 .conversation-tree-container {
-  background: #1e1e1e;
-  border-bottom: 1px solid #333;
-  max-height: 300px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
+  min-height: 60px;
+  max-height: 40vh;
+  height: auto;
+  position: relative;
+  transition: max-height var(--duration-slow) var(--ease-in-out);
+}
+
+.conversation-tree-container.collapsed {
+  max-height: 48px;
+  min-height: 48px;
+}
+
+.conversation-tree-container.collapsed .conversation-tree-scroll {
+  display: none;
 }
 
 .tree-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background: #242424;
-  border-bottom: 1px solid #333;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
 }
 
 .tree-header-left {
@@ -622,22 +750,50 @@ body.resizing * {
   gap: var(--space-2);
 }
 
+.tree-header-center {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.tree-header-center:hover {
+  background: var(--bg-hover);
+}
+
+.tree-header-center h3 {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.tree-collapse-icon {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  transition: transform var(--duration-normal) var(--ease-out);
+}
+
+.conversation-tree-container.collapsed .tree-collapse-icon {
+  transform: rotate(-90deg);
+}
+
 .tree-header-right {
   display: flex;
   align-items: center;
   gap: var(--space-3);
 }
 
-.tree-header h3 {
-  font-size: 14px;
-  font-weight: 600;
-  color: #e0e0e0;
-  margin: 0;
-}
-
 .tree-indicator {
-  font-size: 12px;
-  color: #888;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 .toggle-agent-panel-btn {
@@ -665,58 +821,178 @@ body.resizing * {
 .conversation-tree-scroll {
   flex: 1;
   overflow-y: auto;
-  padding: 8px;
+  overflow-x: hidden;
+  padding: var(--space-2);
 }
 
 .conversation-tree {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .tree-node {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
-  background: #2d2d2d;
-  border-radius: 4px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--duration-fast) var(--ease-out);
   border: 1px solid transparent;
-  font-size: 13px;
+  font-size: var(--text-xs);
+  min-height: 36px;
 }
 
 .tree-node:hover {
-  background: #3d3d3d;
-  border-color: #404040;
+  background: var(--bg-hover);
+  border-color: var(--border-default);
+  transform: translateX(2px);
 }
 
 .tree-node.active {
-  background: #1e3a5f;
-  border-color: #0d6efd;
+  background: rgba(59, 130, 246, 0.15);
+  border-color: var(--brand-primary);
+  box-shadow: inset 3px 0 0 var(--brand-primary);
 }
 
 .tree-arrow {
-  width: 20px;
+  width: 18px;
   flex-shrink: 0;
-  font-size: 12px;
-  color: #888;
+  font-size: 10px;
+  color: var(--text-tertiary);
   user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.tree-arrow:hover {
+  color: var(--brand-primary);
+}
+
+.tree-model-badge {
+  padding: 2px 6px;
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  margin-right: var(--space-2);
+  flex-shrink: 0;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Model-specific colors */
+.tree-model-badge.openai {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.tree-model-badge.anthropic {
+  background: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+}
+
+.tree-model-badge.google {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.tree-model-badge.xai {
+  background: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+}
+
+.tree-model-badge.meta {
+  background: rgba(6, 182, 212, 0.15);
+  color: #06b6d4;
 }
 
 .tree-label {
   flex: 1;
-  color: #e0e0e0;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.tree-label-number {
+  color: var(--text-tertiary);
+  margin-right: var(--space-1);
+  font-weight: var(--font-medium);
+}
+
+.tree-label-prompt {
+  color: var(--text-secondary);
+}
+
+.tree-node.active .tree-label-prompt {
+  color: var(--text-primary);
+}
+
+.tree-branch-count {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  background: var(--bg-primary);
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  margin-left: var(--space-2);
+  flex-shrink: 0;
 }
 
 .tree-empty {
-  padding: 20px;
+  padding: var(--space-6);
   text-align: center;
-  color: #666;
-  font-size: 13px;
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+}
+
+.tree-empty-icon {
+  font-size: var(--text-2xl);
+  margin-bottom: var(--space-2);
+  opacity: 0.5;
+}
+
+/* Tree resize handle */
+.tree-resize-handle {
+  height: 4px;
+  background: transparent;
+  cursor: row-resize;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.tree-resize-handle:hover {
+  background: rgba(59, 130, 246, 0.3);
+}
+
+.tree-resize-handle::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 3px;
+  background: var(--border-subtle);
+  border-radius: var(--radius-full);
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+.tree-resize-handle:hover::after {
+  opacity: 1;
+  background: var(--brand-primary);
 }
 
 /* Scrollbar styling for tree */
@@ -725,68 +1001,84 @@ body.resizing * {
 }
 
 .conversation-tree-scroll::-webkit-scrollbar-track {
-  background: #1e1e1e;
+  background: var(--bg-secondary);
 }
 
 .conversation-tree-scroll::-webkit-scrollbar-thumb {
-  background: #444;
-  border-radius: 3px;
+  background: var(--border-default);
+  border-radius: var(--radius-full);
 }
 
 .conversation-tree-scroll::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--border-strong);
 }
 
-/* Branch Indicator */
+/* Branch Indicator - Message Progress */
 .branch-indicator {
-  position: fixed;
-  right: 370px; /* Agent panel width + margin */
+  position: absolute;
+  right: var(--space-4);
   top: 50%;
   transform: translateY(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-4);
   z-index: 10;
-  opacity: 0.6;
-  transition: right var(--duration-slow) var(--ease-in-out),
-              opacity var(--duration-normal) var(--ease-out);
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-out);
+  pointer-events: none;
+}
+
+/* Show on hover over chat messages area */
+.chat-messages:hover ~ .branch-indicator,
+.branch-indicator:hover {
+  opacity: 1;
   pointer-events: auto;
 }
 
-.branch-indicator:hover {
-  opacity: 1;
-}
-
-/* Adjust position when agent panel is collapsed */
-.agent-panel.collapsed ~ * .branch-indicator,
-body:has(.agent-panel.collapsed) .branch-indicator {
-  right: 20px;
+.branch-indicator-track {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-2) 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-lg);
 }
 
 .branch-line {
   position: absolute;
-  width: 1px;
-  height: 100%;
-  background: var(--border-default);
+  width: 2px;
+  top: var(--space-4);
+  bottom: var(--space-4);
+  background: linear-gradient(
+    to bottom,
+    var(--border-subtle) 0%,
+    var(--brand-primary) 50%,
+    var(--border-subtle) 100%
+  );
   left: 50%;
   transform: translateX(-50%);
-  z-index: -1;
+  z-index: 0;
+  border-radius: var(--radius-full);
 }
 
 .branch-dots-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-3);
   position: relative;
+  z-index: 1;
+  padding: var(--space-2);
 }
 
 .branch-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--text-tertiary);
-  border: 2px solid var(--bg-primary);
+  width: 10px;
+  height: 10px;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-default);
   border-radius: 50%;
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-out);
@@ -795,31 +1087,54 @@ body:has(.agent-panel.collapsed) .branch-indicator {
 }
 
 .branch-dot:hover {
-  transform: scale(1.3);
+  transform: scale(1.4);
   background: var(--brand-primary);
+  border-color: var(--brand-primary);
 }
 
 .branch-dot.active {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   background: var(--brand-primary);
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
 }
 
-.branch-dot.branch-point::before {
+.branch-dot.user {
+  background: rgba(59, 130, 246, 0.3);
+  border-color: var(--brand-primary);
+}
+
+.branch-dot.assistant {
+  background: var(--bg-hover);
+  border-color: var(--text-tertiary);
+}
+
+.branch-dot.assistant.active {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+
+.branch-dot.branch-point {
+  background: var(--warning);
+  border-color: var(--warning);
+}
+
+.branch-dot.branch-point::after {
   content: '';
   position: absolute;
-  width: 20px;
-  height: 1px;
-  background: var(--border-default);
-  right: 100%;
+  width: 6px;
+  height: 2px;
+  background: var(--warning);
+  left: calc(100% + 2px);
   top: 50%;
   transform: translateY(-50%);
+  border-radius: var(--radius-full);
 }
 
 .branch-tooltip {
   position: absolute;
-  right: calc(100% + 12px);
+  right: calc(100% + 16px);
   top: 50%;
   transform: translateY(-50%);
   padding: var(--space-2) var(--space-3);
@@ -828,30 +1143,81 @@ body:has(.agent-panel.collapsed) .branch-indicator {
   border-radius: var(--radius-md);
   font-size: var(--text-xs);
   white-space: nowrap;
-  max-width: 200px;
+  max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--duration-normal) var(--ease-out);
-  box-shadow: var(--shadow-md);
+  transition: opacity var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
+  box-shadow: var(--shadow-lg);
   color: var(--text-primary);
+  transform: translateY(-50%) translateX(5px);
 }
 
 .branch-dot:hover .branch-tooltip {
   opacity: 1;
+  transform: translateY(-50%) translateX(0);
 }
 
-/* Hide on mobile and when agent panel is visible */
+.branch-tooltip-role {
+  font-weight: var(--font-semibold);
+  color: var(--text-secondary);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.branch-tooltip-content {
+  color: var(--text-primary);
+}
+
+/* Empty state */
+.branch-indicator-empty {
+  padding: var(--space-3);
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  text-align: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+/* Scroll progress indicator */
+.branch-scroll-progress {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  background: var(--brand-primary);
+  border-radius: var(--radius-full);
+  transition: height var(--duration-fast) var(--ease-out);
+  z-index: 0;
+}
+
+/* Hide on mobile */
 @media (max-width: 768px) {
   .branch-indicator {
     display: none;
   }
 }
 
-/* Adjust position when sidebar is collapsed */
-.session-history.collapsed ~ .main-chat .branch-indicator {
-  right: 370px; /* Same as default */
+/* Compact mode for many messages */
+.branch-indicator.compact .branch-dot {
+  width: 6px;
+  height: 6px;
+}
+
+.branch-indicator.compact .branch-dot.active {
+  width: 10px;
+  height: 10px;
+}
+
+.branch-indicator.compact .branch-dots-container {
+  gap: var(--space-2);
 }
 
 /* Settings Button */

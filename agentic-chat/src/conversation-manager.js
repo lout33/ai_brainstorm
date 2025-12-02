@@ -1,17 +1,31 @@
 // Conversation Manager
 // Manages TWO separate conversation histories:
-// 1. Agent chat history (right panel)
+// 1. Agent chat history (right panel) - now supports multiple agent chats
 // 2. Model conversations (main chat, left panel)
 
 import { sendChatCompletion, extractMessageContent, sendStreamingChatCompletion } from './openrouter-client.js';
 import { loadApiKey } from './api-key-manager.js';
 
 // State
-let agentHistory = [];
+let agentChats = []; // Array of agent chat objects { id, name, history, createdAt }
+let currentAgentChatIndex = 0;
+let agentChatIdCounter = 1;
 let conversations = [];
 let currentConversationIndex = 0;
 let conversationIdCounter = 1;
 let expandedConversations = []; // Track expanded conversation IDs
+
+// Initialize with a default agent chat
+function ensureAgentChat() {
+  if (agentChats.length === 0) {
+    agentChats.push({
+      id: String(agentChatIdCounter++),
+      name: 'Agent Chat 1',
+      history: [],
+      createdAt: Date.now()
+    });
+  }
+}
 
 // State change notification callback
 let stateChangeCallback = null;
@@ -30,8 +44,11 @@ function notifyStateChange() {
 
 // Get current state (for session manager)
 export function getState() {
+  ensureAgentChat();
   return {
-    agentHistory: [...agentHistory],
+    // Support both old format (agentHistory) and new format (agentChats)
+    agentChats: agentChats.map(chat => ({ ...chat, history: [...chat.history] })),
+    currentAgentChatIndex,
     conversations: conversations.map(c => ({ ...c, history: [...c.history] })),
     currentConversationIndex,
     expandedConversations: [...expandedConversations]
@@ -41,33 +58,146 @@ export function getState() {
 // Set state (for session manager)
 export function setState(state) {
   if (!state) return;
-  
-  agentHistory = state.agentHistory ? [...state.agentHistory] : [];
+
+  // Handle migration from old format (agentHistory) to new format (agentChats)
+  if (state.agentChats) {
+    agentChats = state.agentChats.map(chat => ({ ...chat, history: [...chat.history] }));
+    currentAgentChatIndex = state.currentAgentChatIndex || 0;
+  } else if (state.agentHistory) {
+    // Migrate old format to new format
+    agentChats = [{
+      id: '1',
+      name: 'Agent Chat 1',
+      history: [...state.agentHistory],
+      createdAt: Date.now()
+    }];
+    currentAgentChatIndex = 0;
+  } else {
+    agentChats = [];
+  }
+
+  // Update agent chat ID counter
+  if (agentChats.length > 0) {
+    const maxAgentId = Math.max(...agentChats.map(c => parseInt(c.id) || 0));
+    agentChatIdCounter = maxAgentId + 1;
+  }
+
   conversations = state.conversations ? state.conversations.map(c => ({ ...c, history: [...c.history] })) : [];
   currentConversationIndex = state.currentConversationIndex || 0;
   expandedConversations = state.expandedConversations ? [...state.expandedConversations] : [];
-  
+
   // Update conversation ID counter to avoid conflicts
   if (conversations.length > 0) {
     const maxId = Math.max(...conversations.map(c => parseInt(c.id) || 0));
     conversationIdCounter = maxId + 1;
   }
+
+  ensureAgentChat();
 }
 
-// AGENT CHAT HISTORY (right panel)
+// AGENT CHAT HISTORY (right panel) - now supports multiple agent chats
+
 export function addAgentMessage(role, content) {
+  ensureAgentChat();
+  const currentChat = agentChats[currentAgentChatIndex];
   const message = {
     role,
     content,
     timestamp: Date.now()
   };
-  agentHistory.push(message);
+  currentChat.history.push(message);
   notifyStateChange();
   return message;
 }
 
 export function getAgentHistory() {
-  return [...agentHistory];
+  ensureAgentChat();
+  return [...agentChats[currentAgentChatIndex].history];
+}
+
+// Get all agent chats
+export function getAllAgentChats() {
+  ensureAgentChat();
+  return agentChats.map(chat => ({
+    id: chat.id,
+    name: chat.name,
+    createdAt: chat.createdAt,
+    messageCount: chat.history.length
+  }));
+}
+
+// Get current agent chat
+export function getCurrentAgentChat() {
+  ensureAgentChat();
+  return agentChats[currentAgentChatIndex];
+}
+
+// Get current agent chat index
+export function getCurrentAgentChatIndex() {
+  return currentAgentChatIndex;
+}
+
+// Create a new agent chat
+export function createNewAgentChat(name = null) {
+  const chatName = name || `Agent Chat ${agentChatIdCounter}`;
+  const newChat = {
+    id: String(agentChatIdCounter++),
+    name: chatName,
+    history: [],
+    createdAt: Date.now()
+  };
+  agentChats.push(newChat);
+  currentAgentChatIndex = agentChats.length - 1;
+  notifyStateChange();
+  return newChat;
+}
+
+// Switch to a specific agent chat by ID
+export function switchAgentChat(chatId) {
+  const index = agentChats.findIndex(chat => chat.id === chatId);
+  if (index !== -1) {
+    currentAgentChatIndex = index;
+    notifyStateChange();
+    return agentChats[currentAgentChatIndex];
+  }
+  return null;
+}
+
+// Delete an agent chat by ID
+export function deleteAgentChat(chatId) {
+  const index = agentChats.findIndex(chat => chat.id === chatId);
+  if (index === -1) return false;
+
+  // Don't delete if it's the only chat
+  if (agentChats.length <= 1) {
+    // Clear the history instead
+    agentChats[0].history = [];
+    notifyStateChange();
+    return true;
+  }
+
+  agentChats.splice(index, 1);
+
+  // Adjust current index if needed
+  if (currentAgentChatIndex >= agentChats.length) {
+    currentAgentChatIndex = agentChats.length - 1;
+  } else if (currentAgentChatIndex > index) {
+    currentAgentChatIndex--;
+  }
+
+  notifyStateChange();
+  return true;
+}
+
+// Rename an agent chat
+export function renameAgentChat(chatId, newName) {
+  const chat = agentChats.find(c => c.id === chatId);
+  if (chat) {
+    chat.name = newName;
+    notifyStateChange();
+    return true;
+  }
+  return false;
 }
 
 // MODEL CONVERSATIONS (main chat, left panel)
