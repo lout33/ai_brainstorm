@@ -90,6 +90,9 @@ const modalActiveModelsList = document.getElementById('modal-active-models-list'
 const modalModelIdInput = document.getElementById('modal-model-id-input');
 const modalModelNameInput = document.getElementById('modal-model-name-input');
 const modalAddModelBtn = document.getElementById('modal-add-model-btn');
+const modalAgentModelInput = document.getElementById('modal-agent-model-input');
+const modalSetAgentModelBtn = document.getElementById('modal-set-agent-model-btn');
+const modalCurrentAgentModel = document.getElementById('modal-current-agent-model');
 
 const agentMessages = document.getElementById('agent-messages');
 const agentInput = document.getElementById('agent-input');
@@ -98,25 +101,73 @@ const agentSuggestions = document.getElementById('agent-suggestions');
 const agentChatSelect = document.getElementById('agent-chat-select');
 const newAgentChatBtn = document.getElementById('new-agent-chat-btn');
 const deleteAgentChatBtn = document.getElementById('delete-agent-chat-btn');
+const agentModelDisplay = document.getElementById('agent-model-display');
 
 // Settings Modal Functions
 function openSettingsModal() {
   modalBackdrop.style.display = 'flex';
   document.body.classList.add('modal-open');
-  
+
   // Load current values
   const apiKey = loadApiKey();
   if (apiKey) {
     modalApiKeyInput.value = apiKey;
   }
-  
-  const agentModel = loadAgentModel();
-  modalAgentModelSelect.value = agentModel;
-  
+
+  // Update agent model display
+  updateAgentModelDisplay();
+
   // Update preset dropdown to reflect current state
   updatePresetDropdown();
-  
+
   renderModalActiveModels();
+}
+
+// Update the agent model display in settings and header
+function updateAgentModelDisplay() {
+  const agentModel = loadAgentModel();
+
+  // Update the current model badge in settings modal
+  modalCurrentAgentModel.textContent = agentModel;
+
+  // Update the agent panel header display
+  // Show a friendly name if it's a known model, otherwise show the ID
+  const friendlyName = getAgentModelFriendlyName(agentModel);
+  agentModelDisplay.textContent = friendlyName;
+  agentModelDisplay.title = `Model: ${agentModel}\nClick Settings to change`;
+
+  // Check if current model is in the preset list
+  const option = modalAgentModelSelect.querySelector(`option[value="${agentModel}"]`);
+  if (option) {
+    modalAgentModelSelect.value = agentModel;
+  } else {
+    modalAgentModelSelect.value = '';
+  }
+
+  // Clear the custom input
+  modalAgentModelInput.value = '';
+}
+
+// Get a friendly display name for a model ID
+function getAgentModelFriendlyName(modelId) {
+  const knownModels = {
+    'google/gemini-2.5-flash': 'Gemini 2.5 Flash',
+    'x-ai/grok-4-fast': 'Grok 4 Fast',
+    'openai/gpt-5-mini': 'GPT-5 Mini',
+    'anthropic/claude-haiku-4.5': 'Claude Haiku 4.5',
+    'anthropic/claude-opus-4.5': 'Claude Opus 4.5',
+    'google/gemini-3-pro-preview': 'Gemini 3 Pro',
+    'openai/gpt-5.1': 'GPT-5.1'
+  };
+
+  if (knownModels[modelId]) {
+    return knownModels[modelId];
+  }
+
+  // For unknown models, try to make the ID more readable
+  // e.g., "anthropic/claude-sonnet-4" -> "claude-sonnet-4"
+  const parts = modelId.split('/');
+  return parts.length > 1 ? parts[1] : modelId;
 }
 
 function closeSettingsModal() {
@@ -155,8 +206,27 @@ function handleModalSaveApiKey() {
 // Modal Agent Model Management
 function handleModalAgentModelChange() {
   const selectedModel = modalAgentModelSelect.value;
+  if (!selectedModel) return; // Ignore empty selection
+
   if (saveAgentModel(selectedModel)) {
     console.log('Agent model changed to:', selectedModel);
+    updateAgentModelDisplay();
+  } else {
+    alert('Failed to save agent model');
+  }
+}
+
+// Handle custom agent model input
+function handleSetCustomAgentModel() {
+  const customModel = modalAgentModelInput.value.trim();
+  if (!customModel) {
+    alert('Please enter a model ID');
+    return;
+  }
+
+  if (saveAgentModel(customModel)) {
+    console.log('Agent model changed to:', customModel);
+    updateAgentModelDisplay();
   } else {
     alert('Failed to save agent model');
   }
@@ -266,9 +336,8 @@ function init() {
     modalApiKeyInput.value = apiKey;
   }
 
-  // Load agent model into modal
-  const agentModel = loadAgentModel();
-  modalAgentModelSelect.value = agentModel;
+  // Load agent model and update display
+  updateAgentModelDisplay();
 
   // Load current preset into modal (auto-detected or saved)
   updatePresetDropdown();
@@ -315,6 +384,13 @@ function init() {
   });
   modalSaveApiKeyBtn.addEventListener('click', handleModalSaveApiKey);
   modalAgentModelSelect.addEventListener('change', handleModalAgentModelChange);
+  modalSetAgentModelBtn.addEventListener('click', handleSetCustomAgentModel);
+  modalAgentModelInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSetCustomAgentModel();
+    }
+  });
   modalPresetSelect.addEventListener('change', handleModalPresetChange);
   modalAddModelBtn.addEventListener('click', handleModalAddModel);
   

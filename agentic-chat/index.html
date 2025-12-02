@@ -72,6 +72,10 @@
             </div>
             <button id="delete-agent-chat-btn" class="delete-agent-chat-btn" title="Delete Chat">🗑</button>
           </div>
+          <div class="agent-header-model">
+            <span class="agent-model-label">Agent:</span>
+            <span id="agent-model-display" class="agent-model-name" title="Click to change in Settings">--</span>
+          </div>
         </div>
 
         <div class="agent-chat-section">
@@ -114,12 +118,39 @@
           <!-- Agent Model Section -->
           <div class="modal-section">
             <h3>Agent Model</h3>
-            <select id="modal-agent-model-select" class="modal-select">
-              <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
-              <option value="x-ai/grok-4-fast">Grok 4 Fast</option>
-              <option value="openai/gpt-5-mini">GPT-5 Mini</option>
-              <option value="anthropic/claude-haiku-4.5">Claude Haiku 4.5</option>
-            </select>
+            <p class="modal-section-desc">The model used to orchestrate conversations. Pick a preset or enter a custom model ID.</p>
+            <div class="agent-model-config">
+              <div class="agent-model-row">
+                <div class="agent-model-suggestions">
+                  <label class="modal-label">Presets</label>
+                  <select id="modal-agent-model-select" class="modal-select">
+                    <option value="">-- Select a preset --</option>
+                    <optgroup label="Fast & Cheap">
+                      <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
+                      <option value="x-ai/grok-4-fast">Grok 4 Fast</option>
+                      <option value="openai/gpt-5-mini">GPT-5 Mini</option>
+                      <option value="anthropic/claude-haiku-4.5">Claude Haiku 4.5</option>
+                    </optgroup>
+                    <optgroup label="Premium">
+                      <option value="anthropic/claude-opus-4.5">Claude Opus 4.5</option>
+                      <option value="google/gemini-3-pro-preview">Gemini 3 Pro Preview</option>
+                      <option value="openai/gpt-5.1">GPT-5.1</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="agent-model-custom">
+                  <label class="modal-label">Custom Model ID</label>
+                  <div class="modal-input-group">
+                    <input type="text" id="modal-agent-model-input" class="modal-input" placeholder="e.g., openai/gpt-4o" />
+                    <button id="modal-set-agent-model-btn" class="modal-btn modal-btn-primary">Set</button>
+                  </div>
+                </div>
+              </div>
+              <div class="agent-model-current">
+                <span class="modal-label">Current Agent:</span>
+                <span id="modal-current-agent-model" class="current-model-badge">--</span>
+              </div>
+            </div>
           </div>
 
           <!-- Active Models Section -->
